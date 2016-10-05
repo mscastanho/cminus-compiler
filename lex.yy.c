@@ -1,5 +1,5 @@
 
-#line 3 "<stdout>"
+#line 3 "lex.yy.c"
 
 #define  YY_INT_ALIGNED short int
 
@@ -518,7 +518,7 @@ char *yytext;
 
 /* comentarios multi-linha (multi-line) */ 
 
-#line 522 "<stdout>"
+#line 522 "lex.yy.c"
 
 #define INITIAL 0
 #define olcomment 1
@@ -720,7 +720,7 @@ YY_DECL
 #line 13 "scanner.l"
 
 
-#line 724 "<stdout>"
+#line 724 "lex.yy.c"
 
 	if ( !(yy_init) )
 		{
@@ -1011,7 +1011,7 @@ YY_RULE_SETUP
 #line 56 "scanner.l"
 ECHO;
 	YY_BREAK
-#line 1015 "<stdout>"
+#line 1015 "lex.yy.c"
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(olcomment):
 case YY_STATE_EOF(mlcomment):

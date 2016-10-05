@@ -96,8 +96,8 @@ lval: ID
     | ID "[" NUM "]" 
     | ID "[" ID "]";
 
-if-stmt: IF "(" bool-expr ")" block
-       | IF "(" bool-expr ")" block ELSE block;
+if-stmt: if "(" bool-expr ")" block
+       | if "(" bool-expr ")" block ELSE block;
 
 block: "{" opt-stmt-list "}";
 
