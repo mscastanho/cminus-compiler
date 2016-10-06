@@ -1,7 +1,11 @@
-%option stack
+%option outfile="scanner.c"
+%option noyywrap
+%option nounput
+%option noinput
+
 %{
+	#include "parser.h"
 	#include <stdio.h>
-	int linha = 1;
 %}
 
 /*comentarios de uma linha (one-line)*/
@@ -14,47 +18,43 @@
 
 "/*" { BEGIN(mlcomment); }
 "//" { BEGIN(olcomment); }
-<olcomment>\n { linha++; BEGIN(INITIAL);}
-<INITIAL,mlcomment>\n { linha++; }
+<olcomment>\n { yylineno++; BEGIN(INITIAL);}
+<INITIAL,mlcomment>\n { yylineno++; }
 <mlcomment>.*"*/" {BEGIN(INITIAL);}
 <mlcomment>.* {;}
 <olcomment>[^"\n"] {;}
-["].*["] {printf("%d: %s -> STRING\n",linha,yytext);}
-"else" {printf("%d: %s -> ELSE\n",linha,yytext);}
-"if" {printf("%d: %s -> IF\n",linha,yytext);}
-"input" {printf("%d: %s -> INPUT\n",linha,yytext);}
-"int" {printf("%d: %s -> INT\n",linha,yytext);}
-"output" {printf("%d: %s -> OUTPUT\n",linha,yytext);}
-"return" {printf("%d: %s -> RETURN\n",linha,yytext);}
-"void" {printf("%d: %s -> VOID\n",linha,yytext);}
-"while" {printf("%d: %s -> WHILE\n",linha,yytext);}
-"write" {printf("%d: %s -> WRITE\n",linha,yytext);}
-[a-zA-Z][a-zA-Z0-9]* {printf("%d: %s -> ID\n",linha,yytext);}
-"+" {printf("%d: %s -> PLUS\n",linha,yytext);}
-"-" {printf("%d: %s -> MINUS\n",linha,yytext);}
-"*" {printf("%d: %s -> TIMES\n",linha,yytext);}
-"/" {printf("%d: %s -> OVER\n",linha,yytext);}
-"<" {printf("%d: %s -> LT\n",linha,yytext);}
-"<=" {printf("%d: %s -> LE\n",linha,yytext);}
-">" {printf("%d: %s -> GT\n",linha,yytext);}
-">=" {printf("%d: %s -> GE\n",linha,yytext);}
-"==" {printf("%d: %s -> EQ\n",linha,yytext);}
-"!=" {printf("%d: %s -> NEQ\n",linha,yytext);}
-"=" {printf("%d: %s -> ASSIGN\n",linha,yytext);}
-";" {printf("%d: %s -> SEMI\n",linha,yytext);}
-"," {printf("%d: %s -> COMMA\n",linha,yytext);}
-"\(" {printf("%d: %s -> LPAREN\n",linha,yytext);}
-"\)" {printf("%d: %s -> RPAREN\n",linha,yytext);}
-"[" {printf("%d: %s -> LBRACK\n",linha,yytext);}
-"]" {printf("%d: %s -> RBRACK\n",linha,yytext);}
-"{" {printf("%d: %s -> LBRACE\n",linha,yytext);}
-"}" {printf("%d: %s -> RBRACE\n",linha,yytext);}
-[0-9]+ {printf("%d: %s -> NUM\n",linha,yytext);}
+["].*["] {return STRING;}
+"else" {return ELSE;}
+"if" {return IF;}
+"input" {return INPUT;}
+"int" {return INT;}
+"output" {return OUTPUT;}
+"return" {return RETURN;}
+"void" {return VOID;}
+"while" {return WHILE;}
+"write" {return WRITE;}
+[a-zA-Z][a-zA-Z0-9]* {return ID;}
+"+" {return PLUS;}
+"-" {return MINUS;}
+"*" {return TIMES;}
+"/" {return OVER;}
+"<" {return LT;}
+"<=" {return LE;}
+">" {return GT;}
+">=" {return GE;}
+"==" {return EQ;}
+"!=" {return NEQ;}
+"=" {return ASSIGN;}
+";" {return SEMI;}
+"," {return COMMA;}
+"\(" {return LPAREN;}
+"\)" {return RPAREN;}
+"[" {return LBRACK;}
+"]" {return RBRACK;}
+"{" {return LBRACE;}
+"}" {return RBRACE;}
+[0-9]+ {return NUM;}
 [ \t\n] ; //ignorar
-.       {printf("%d: %s -> UNKNOWN\n",linha,yytext);}
+.       {printf("SCANNING ERROR (%d): Unknown symbol %s\n",yylineno,yytext); exit(1);}
 
-%%
-
-int main () {yylex(); return 0; }
-int yywrap() {return 1;}
 

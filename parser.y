@@ -28,18 +28,14 @@ extern int yylineno;
 %token VOID
 %token WHILE
 %token READ WRITE 
-%token SEMI ";"
-%token COMMA ","
-%token LPAREN "("
-%token RPAREN ")"
-%token LBRACK "["
-%token RBRACK "]"
-%token LBRACE "{"
-%token RBRACE "}"
-%token ASSIGN "="
+%token SEMI 
+%token COMMA
+%token LPAREN RPAREN
+%token LBRACK RBRACK
+%token LBRACE RBRACE
+%token ASSIGN
 %token ID
 %token NUM
-%token UNKNOWN
 
 %left EQ NEQ LT LE GT GE 
 %left PLUS MINUS
@@ -54,9 +50,9 @@ func-decl-list: func-decl-list func-decl
 
 func-decl: func-header func-body;
 
-func-header: ret-type ID "(" params ")";
+func-header: ret-type ID LPAREN params RPAREN;
 
-func-body: "{" opt-var-decl opt-stmt-list "}";
+func-body: LBRACE opt-var-decl opt-stmt-list RBRACE;
 
 opt-var-decl: %empty
 	    | var-decl-list;
@@ -70,16 +66,16 @@ ret-type: INT
 params: VOID
       | param-list;
 
-param-list: param-list "," param 
+param-list: param-list COMMA param 
 	  | param;
 
-param: INT ID | INT ID "[" "]";
+param: INT ID | INT ID LBRACK RBRACK;
 
 var-decl-list: var-decl-list var-decl
 	     | var-decl;
 
-var-decl: INT ID ";"
-	| INT ID "[" NUM "]";
+var-decl: INT ID SEMI
+	| INT ID LBRACK NUM RBRACK SEMI;
 
 stmt-list: stmt-list stmt
 	 | stmt;
@@ -88,54 +84,55 @@ stmt: assign-stmt
     | if-stmt 
     | while-stmt
     | return-stmt
-    | func-call ";";
+    | func-call SEMI;
 
-assign-stmt: lval "=" arith-expr ";";
+assign-stmt: lval ASSIGN arith-expr SEMI;
 
 lval: ID
-    | ID "[" NUM "]" 
-    | ID "[" ID "]";
+    | ID LBRACK NUM RBRACK 
+    | ID LBRACK ID RBRACK;
 
-if-stmt: IF "(" bool-expr ")" block
-       | IF "(" bool-expr ")" block ELSE block;
+if-stmt: IF LPAREN bool-expr RPAREN block
+       | IF LPAREN bool-expr RPAREN block ELSE block;
 
-block: "{" opt-stmt-list "}";
+block: LBRACE opt-stmt-list RBRACE;
 
-while-stmt: WHILE "(" bool-expr ")" block;
+while-stmt: WHILE LPAREN bool-expr RPAREN block;
 
-return-stmt: RETURN ";"
-	   | RETURN arith-expr ";";
+return-stmt: RETURN SEMI
+	   | RETURN arith-expr SEMI;
 
 func-call: output-call
 	 | write-call
 	 | user-func-call;
 
-input-call: INPUT "("")";
+input-call: INPUT LPAREN RPAREN;
 
-output-call: OUTPUT "(" arith-expr ")";
+output-call: OUTPUT LPAREN arith-expr RPAREN;
 
-write-call: WRITE "(" STRING ")";
+write-call: WRITE LPAREN STRING RPAREN;
 
-user-func-call: ID "(" opt-arg-list ")";
+user-func-call: ID LPAREN opt-arg-list RPAREN;
 
 opt-arg-list: %empty
 	    | arg-list;
 
-arg-list: arg-list "," arith-expr
+arg-list: arg-list COMMA arith-expr
 	| arith-expr;
 
 bool-expr: arith-expr bool-op arith-expr;
 
 bool-op: EQ | NEQ | LT | LE | GT | GE;
 
-arith-expr: arith-expr arith-op arith-expr
-	  | "(" arith-expr ")"
+arith-expr: arith-expr PLUS arith-expr
+	  | arith-expr MINUS arith-expr
+	  | arith-expr TIMES arith-expr
+	  | arith-expr OVER arith-expr
+	  | LPAREN arith-expr RPAREN
 	  | lval 
 	  | input-call
 	  | user-func-call
 	  | NUM;
-
-arith-op: PLUS | MINUS | TIMES | OVER;
 
 %%
 

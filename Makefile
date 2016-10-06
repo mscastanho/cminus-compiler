@@ -11,4 +11,4 @@ gcc: scanner.c parser.c
 	gcc -Wall -o parser scanner.c parser.c -ly
 
 clean:
-	@rm -f *.o *.output scanner.c parser.h parser.c parser
+	@rm -f *.o *.output *~ scanner.c parser.h parser.c parser
