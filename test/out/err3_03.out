@@ -1,1 +1,1 @@
-PARSE SUCESSFUL!
+SEMANTIC ERROR (4): variable 'x' already declared at line 3.

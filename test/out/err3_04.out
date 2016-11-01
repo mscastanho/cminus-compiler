@@ -1,1 +1,1 @@
-PARSE SUCESSFUL!
+SEMANTIC ERROR (7): function 'f' already declared at line 3.
