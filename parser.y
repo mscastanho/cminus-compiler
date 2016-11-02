@@ -13,12 +13,26 @@
 
 %{
 #include <stdio.h>
+#include "tree.h"
+#include "queue.h"
 
 int yylex(void);
 void yyerror(char const *s);
+void add_children_from_list(Tree* parent, Tree** list, int* idx);
+Queue* add_children_from_q(Tree* parent, Queue* list);
 
 extern int yylineno;
+
+Tree *ast;
+Queue* paramList = NULL; 
+Queue* funcList = NULL;
+Queue* varList = NULL;
+Queue* stmtList = NULL;
+
+
 %}
+
+%define api.value.type {Tree*}
 
 %token STRING
 %token IF ELSE
@@ -41,41 +55,70 @@ extern int yylineno;
 %left PLUS MINUS
 %left TIMES OVER
 
+%start program
+
 %%
 
-program: func-decl-list;
+program: 
+	func-decl-list { ast = new_node("program"); funcList = add_children_from_q(ast,funcList);   }
+	;
 
-func-decl-list: func-decl-list func-decl 
-	      | func-decl;
+func-decl-list: 
+	func-decl func-decl-list { funcList = Q_addNode(funcList,$1); } 
+    | func-decl 			 { funcList = Q_addNode(funcList,$1); }
+	;
 
-func-decl: func-header func-body;
+func-decl: 
+	func-header func-body { $$ = new_subtree("func-decl",2,$1,$2); }
+	;
 
-func-header: ret-type ID LPAREN params RPAREN;
+func-header: 
+	ret-type ID LPAREN params RPAREN { $$ = new_subtree("func-header",3,$1,$2,$4); }
+	;
 
-func-body: LBRACE opt-var-decl opt-stmt-list RBRACE;
+func-body: 
+	LBRACE opt-var-decl opt-stmt-list RBRACE { $$ = new_subtree("func-body",2,$2,$3); }
+	;
+	
+opt-var-decl: 
+	%empty
+    | var-decl-list { Tree* n = new_node("var-list"); varList = add_children_from_q(n,varList); $$ = n; }
+	;
 
-opt-var-decl: %empty
-	    | var-decl-list;
+opt-stmt-list: 
+	%empty
+    | stmt-list { $$ = $1; }
+	;
 
-opt-stmt-list: %empty
-	     | stmt-list;
+ret-type: 
+	INT		{ $$ = $1; } 
+	| VOID	{ $$ = $1; }
+	;
 
-ret-type: INT 
-	| VOID;
+params: 
+	VOID			{ $$ = new_subtree("params",0); }
+	| param-list	{ Tree* n = new_node("params"); paramList = add_children_from_q(n,paramList); $$ = n; }
+	;
 
-params: VOID
-      | param-list;
+param-list: 
+	param COMMA param-list { paramList = Q_addNode(paramList,$1); }
+  	| param				   { paramList = Q_addNode(paramList,$1); } 
+	;
 
-param-list: param-list COMMA param 
-	  | param;
+param: 
+	INT ID						{ $$ = $1; } // diferenciar constante de vetor
+	| INT ID LBRACK RBRACK		{ $$ = $1; } // -----	
+	;
 
-param: INT ID | INT ID LBRACK RBRACK;
+var-decl-list: 
+	var-decl var-decl-list { varList = Q_addNode(varList,$1); }
+    | var-decl			   { varList = Q_addNode(varList,$1); }
+	;
 
-var-decl-list: var-decl-list var-decl
-	     | var-decl;
-
-var-decl: INT ID SEMI
-	| INT ID LBRACK NUM RBRACK SEMI;
+var-decl: 
+	INT ID SEMI							{ $$ = $1; } // diferenciar constante de vetor
+	| INT ID LBRACK NUM RBRACK SEMI		{ $$ = $1; } // ---------
+	;
 
 stmt-list: stmt-list stmt
 	 | stmt;
@@ -136,6 +179,29 @@ arith-expr: arith-expr PLUS arith-expr
 
 %%
 
+void add_children_from_list(Tree* parent, Tree** list, int* idx){
+	int i; 
+
+	for(i=0;i<*idx;i++) 
+		add_child(parent,list[i]);
+
+	*idx = 0;
+}
+
+Queue* add_children_from_q(Tree* parent, Queue* list){
+	Tree* t = NULL;
+
+	do{
+		list = Q_removeNode(list,&t);		
+		
+		if(t != NULL)
+			add_child(parent,t);
+
+	}while(list != NULL);
+
+	return list;
+}
+
 // Error handling
 void yyerror (char const *s){
 	printf("PARSE ERROR (%d): %s\n", yylineno, s);
@@ -145,7 +211,9 @@ int main() {
   //yydebug = 1; // Enter debug mode.
 
   if (yyparse() == 0){
-		printf("PARSE SUCESSFUL!\n");
+	print_dot(ast);
+	//free_tree(ast);
+	//printf("PARSE SUCESSFUL!\n");
   }
   return 0;
 }

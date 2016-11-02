@@ -4,7 +4,7 @@
 %option noinput
 
 %{
-#include <stdio>
+#include <stdio.h>
 #include "tree.h"
 #include "parser.h"
 #include "tables.h"

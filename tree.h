@@ -13,6 +13,7 @@ Tree* new_subtree(const char *text, int child_count, ...);
 
 void print_tree(Tree *tree);
 void print_dot(Tree *tree);
+void print_node(Tree *node, int level);
 
 void free_tree(Tree *tree);
 
