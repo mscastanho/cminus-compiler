@@ -28,6 +28,7 @@ Queue* paramList = NULL;
 Queue* funcList = NULL;
 Queue* varList = NULL;
 Queue* stmtList = NULL;
+Queue* argList = NULL;
 
 
 %}
@@ -81,13 +82,13 @@ func-body:
 	;
 	
 opt-var-decl: 
-	%empty
+	%empty 			{ $$ = new_node("var-list"); }
     | var-decl-list { Tree* n = new_node("var-list"); varList = add_children_from_q(n,varList); $$ = n; }
 	;
 
 opt-stmt-list: 
-	%empty
-    | stmt-list { $$ = $1; }
+	%empty		{ $$ = new_node("block"); }
+    | stmt-list { Tree* n = new_node("block"); stmtList = add_children_from_q(n,stmtList); $$ = n; }
 	;
 
 ret-type: 
@@ -117,65 +118,104 @@ var-decl-list:
 
 var-decl: 
 	INT ID SEMI							{ $$ = $1; } // diferenciar constante de vetor
-	| INT ID LBRACK NUM RBRACK SEMI		{ $$ = $1; } // ---------
+	| INT ID LBRACK NUM RBRACK SEMI		{ $$ = new_subtree("vetor",1,$4); } // ---------
 	;
 
-stmt-list: stmt-list stmt
-	 | stmt;
+stmt-list: 
+	stmt stmt-list 	{ stmtList = Q_addNode(stmtList,$1); }
+	| stmt 			{ stmtList = Q_addNode(stmtList,$1); }
+	;				
 
-stmt: assign-stmt
-    | if-stmt 
-    | while-stmt
-    | return-stmt
-    | func-call SEMI;
+stmt: 
+	assign-stmt			{ $$ = $1; }
+    | if-stmt 			{ $$ = $1; }
+    | while-stmt		{ $$ = $1; }
+    | return-stmt		{ $$ = $1; }
+    | func-call SEMI	{ $$ = $1; }
+	;
 
-assign-stmt: lval ASSIGN arith-expr SEMI;
+assign-stmt: 
+	lval ASSIGN arith-expr SEMI { $$ = new_subtree("=",2,$1,$3); }
+	;
 
-lval: ID
-    | ID LBRACK NUM RBRACK 
-    | ID LBRACK ID RBRACK;
+lval: 
+	ID							{ $$ = $1; }
+    | ID LBRACK NUM RBRACK 		{ $$ = new_subtree("vetor",1,$3); }
+    | ID LBRACK ID RBRACK		{ $$ = new_subtree("vetor",1,$3); }
+	;
 
-if-stmt: IF LPAREN bool-expr RPAREN block
-       | IF LPAREN bool-expr RPAREN block ELSE block;
+if-stmt: 
+	IF LPAREN bool-expr RPAREN block				{ $$ = new_subtree("if",2,$3,$5); }
+    | IF LPAREN bool-expr RPAREN block ELSE block	{ $$ = new_subtree("if",3,$3,$5,$7); }
+	;
 
-block: LBRACE opt-stmt-list RBRACE;
+block: 
+	LBRACE opt-stmt-list RBRACE { $$ = $2; }
+	;
 
-while-stmt: WHILE LPAREN bool-expr RPAREN block;
+while-stmt: 
+	WHILE LPAREN bool-expr RPAREN block { $$ = new_subtree("while",2,$3,$5); }
+	;
 
-return-stmt: RETURN SEMI
-	   | RETURN arith-expr SEMI;
+return-stmt: 
+	RETURN SEMI					{ $$ = new_node("return"); }
+	| RETURN arith-expr SEMI	{ $$ = new_subtree("return",1,$2); }
+	;
 
-func-call: output-call
-	 | write-call
-	 | user-func-call;
+func-call: 
+	output-call			{ $$ = $1; }
+	| write-call		{ $$ = $1; }
+	| user-func-call	{ $$ = $1; }
+	;
 
-input-call: INPUT LPAREN RPAREN;
+input-call: 
+	INPUT LPAREN RPAREN { $$ = new_node("input"); }
+	;
 
-output-call: OUTPUT LPAREN arith-expr RPAREN;
+output-call: 
+	OUTPUT LPAREN arith-expr RPAREN { $$ = new_subtree("output",1,$3); }
+	;
 
-write-call: WRITE LPAREN STRING RPAREN;
+write-call: 
+	WRITE LPAREN STRING RPAREN { Tree* s = new_node("string"); $$ = new_subtree("write",1,s); } //checar string
+	;
 
-user-func-call: ID LPAREN opt-arg-list RPAREN;
+user-func-call: 
+	ID LPAREN opt-arg-list RPAREN { $$ = new_subtree("user_func",1,$3); } // checar funcao
+	;
 
-opt-arg-list: %empty
-	    | arg-list;
+opt-arg-list: 
+	%empty 	   { $$ = new_node("arg-list");;}
+    | arg-list { Tree* n = new_node("arg-list"); argList = add_children_from_q(n,argList); $$ = n; }
+	;
 
-arg-list: arg-list COMMA arith-expr
-	| arith-expr;
+arg-list: 
+	arith-expr COMMA arg-list 	{ argList = Q_addNode(argList,$1); }
+	| arith-expr			  	{ argList = Q_addNode(argList,$1); }
+	;
 
-bool-expr: arith-expr bool-op arith-expr;
+bool-expr: 
+	arith-expr EQ arith-expr 	{ $$ = new_subtree("==",2,$1,$3); }
+	| arith-expr NEQ arith-expr { $$ = new_subtree("!=",2,$1,$3); }
+	| arith-expr LT arith-expr 	{ $$ = new_subtree("<",2,$1,$3);  }
+	| arith-expr LE arith-expr 	{ $$ = new_subtree("<=",2,$1,$3); }
+	| arith-expr GT arith-expr 	{ $$ = new_subtree(">",2,$1,$3);  }
+	| arith-expr GE arith-expr 	{ $$ = new_subtree(">=",2,$1,$3); }
+	;
 
-bool-op: EQ | NEQ | LT | LE | GT | GE;
+//bool-op: EQ | NEQ | LT | LE | GT | GE;
 
-arith-expr: arith-expr PLUS arith-expr
-	  | arith-expr MINUS arith-expr
-	  | arith-expr TIMES arith-expr
-	  | arith-expr OVER arith-expr
-	  | LPAREN arith-expr RPAREN
-	  | lval 
-	  | input-call
-	  | user-func-call
-	  | NUM;
+arith-expr: 
+	arith-expr PLUS arith-expr 		{ $$ = new_subtree("+",2,$1,$3); }
+	| arith-expr MINUS arith-expr	{ $$ = new_subtree("-",2,$1,$3); }
+	| arith-expr TIMES arith-expr	{ $$ = new_subtree("*",2,$1,$3); }
+	| arith-expr OVER arith-expr	{ $$ = new_subtree("/",2,$1,$3); }
+	| LPAREN arith-expr RPAREN		{ $$ = new_subtree("+",1,$2); 	 }
+	| lval 							{ $$ = $1; }
+	| input-call					{ $$ = $1; }
+	| user-func-call				{ $$ = $1; } //checar funcao
+	| NUM							{ $$ = $1; }	
+	;
 
 %%
 
