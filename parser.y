@@ -61,7 +61,7 @@ Queue* argList = NULL;
 %%
 
 program: 
-	func-decl-list { ast = new_node("program"); funcList = add_children_from_q(ast,funcList);   }
+	func-decl-list { ast = new_node(PROGRAM,0); funcList = add_children_from_q(ast,funcList);   }
 	;
 
 func-decl-list: 
@@ -70,25 +70,25 @@ func-decl-list:
 	;
 
 func-decl: 
-	func-header func-body { $$ = new_subtree("func-decl",2,$1,$2); }
+	func-header func-body { $$ = new_subtree(FUNC_DECL,0,2,$1,$2); }
 	;
 
 func-header: 
-	ret-type ID LPAREN params RPAREN { $$ = new_subtree("func-header",3,$1,$2,$4); }
+	ret-type ID LPAREN params RPAREN { $$ = new_subtree(FUNC_HEADER,0,3,$1,$2,$4); }
 	;
 
 func-body: 
-	LBRACE opt-var-decl opt-stmt-list RBRACE { $$ = new_subtree("func-body",2,$2,$3); }
+	LBRACE opt-var-decl opt-stmt-list RBRACE { $$ = new_subtree(FUNC_BODY,0,2,$2,$3); }
 	;
 	
 opt-var-decl: 
-	%empty 			{ $$ = new_node("var-list"); }
-    | var-decl-list { Tree* n = new_node("var-list"); varList = add_children_from_q(n,varList); $$ = n; }
+	%empty 			{ $$ = new_node(VAR_LIST,0); }
+    | var-decl-list { Tree* n = new_node(VAR_LIST,0); varList = add_children_from_q(n,varList); $$ = n; }
 	;
 
 opt-stmt-list: 
-	%empty		{ $$ = new_node("block"); }
-    | stmt-list { Tree* n = new_node("block"); stmtList = add_children_from_q(n,stmtList); $$ = n; }
+	%empty		{ $$ = new_node(BLOCK,0); }
+    | stmt-list { Tree* n = new_node(BLOCK,0); stmtList = add_children_from_q(n,stmtList); $$ = n; }
 	;
 
 ret-type: 
@@ -97,8 +97,8 @@ ret-type:
 	;
 
 params: 
-	VOID			{ $$ = new_subtree("params",0); }
-	| param-list	{ Tree* n = new_node("params"); paramList = add_children_from_q(n,paramList); $$ = n; }
+	VOID			{ $$ = new_node(PARAMS,0); }
+	| param-list	{ Tree* n = new_node(PARAMS,0); paramList = add_children_from_q(n,paramList); $$ = n; }
 	;
 
 param-list: 
@@ -118,7 +118,7 @@ var-decl-list:
 
 var-decl: 
 	INT ID SEMI							{ $$ = $1; } // diferenciar constante de vetor
-	| INT ID LBRACK NUM RBRACK SEMI		{ $$ = new_subtree("vetor",1,$4); } // ---------
+	| INT ID LBRACK NUM RBRACK SEMI		{ $$ = new_subtree(CVAR,0,1,$4); } // ---------
 	;
 
 stmt-list: 
@@ -135,18 +135,18 @@ stmt:
 	;
 
 assign-stmt: 
-	lval ASSIGN arith-expr SEMI { $$ = new_subtree("=",2,$1,$3); }
+	lval ASSIGN arith-expr SEMI { $$ = new_subtree(_ASSIGN,0,2,$1,$3); }
 	;
 
 lval: 
 	ID							{ $$ = $1; }
-    | ID LBRACK NUM RBRACK 		{ $$ = new_subtree("vetor",1,$3); }
-    | ID LBRACK ID RBRACK		{ $$ = new_subtree("vetor",1,$3); }
+    | ID LBRACK NUM RBRACK 		{ $$ = new_subtree(CVAR,0,1,$3); }
+    | ID LBRACK ID RBRACK		{ $$ = new_subtree(CVAR,0,1,$3); }
 	;
 
 if-stmt: 
-	IF LPAREN bool-expr RPAREN block				{ $$ = new_subtree("if",2,$3,$5); }
-    | IF LPAREN bool-expr RPAREN block ELSE block	{ $$ = new_subtree("if",3,$3,$5,$7); }
+	IF LPAREN bool-expr RPAREN block				{ $$ = new_subtree(_IF,0,2,$3,$5); }
+    | IF LPAREN bool-expr RPAREN block ELSE block	{ $$ = new_subtree(_IF,0,3,$3,$5,$7); }
 	;
 
 block: 
@@ -154,12 +154,12 @@ block:
 	;
 
 while-stmt: 
-	WHILE LPAREN bool-expr RPAREN block { $$ = new_subtree("while",2,$3,$5); }
+	WHILE LPAREN bool-expr RPAREN block { $$ = new_subtree(_WHILE,0,2,$3,$5); }
 	;
 
 return-stmt: 
-	RETURN SEMI					{ $$ = new_node("return"); }
-	| RETURN arith-expr SEMI	{ $$ = new_subtree("return",1,$2); }
+	RETURN SEMI					{ $$ = new_node(_RETURN,0); }
+	| RETURN arith-expr SEMI	{ $$ = new_subtree(_RETURN,0,1,$2); }
 	;
 
 func-call: 
@@ -169,24 +169,24 @@ func-call:
 	;
 
 input-call: 
-	INPUT LPAREN RPAREN { $$ = new_node("input"); }
+	INPUT LPAREN RPAREN { $$ = new_node(_INPUT,0); }
 	;
 
 output-call: 
-	OUTPUT LPAREN arith-expr RPAREN { $$ = new_subtree("output",1,$3); }
+	OUTPUT LPAREN arith-expr RPAREN { $$ = new_subtree(_OUTPUT,0,1,$3); }
 	;
 
 write-call: 
-	WRITE LPAREN STRING RPAREN { Tree* s = new_node("string"); $$ = new_subtree("write",1,s); } //checar string
+	WRITE LPAREN STRING RPAREN { Tree* s = new_node(_STRING,0); $$ = new_subtree(WRITE,0,1,s); } //checar string
 	;
 
 user-func-call: 
-	ID LPAREN opt-arg-list RPAREN { $$ = new_subtree("user_func",1,$3); } // checar funcao
+	ID LPAREN opt-arg-list RPAREN { $$ = new_subtree(USER_FUNC,0,1,$3); } // checar funcao
 	;
 
 opt-arg-list: 
-	%empty 	   { $$ = new_node("arg-list");;}
-    | arg-list { Tree* n = new_node("arg-list"); argList = add_children_from_q(n,argList); $$ = n; }
+	%empty 	   { $$ = new_node(ARG_LIST,0);}
+    | arg-list { Tree* n = new_node(ARG_LIST,0); argList = add_children_from_q(n,argList); $$ = n; }
 	;
 
 arg-list: 
@@ -195,22 +195,22 @@ arg-list:
 	;
 
 bool-expr: 
-	arith-expr EQ arith-expr 	{ $$ = new_subtree("==",2,$1,$3); }
-	| arith-expr NEQ arith-expr { $$ = new_subtree("!=",2,$1,$3); }
-	| arith-expr LT arith-expr 	{ $$ = new_subtree("<",2,$1,$3);  }
-	| arith-expr LE arith-expr 	{ $$ = new_subtree("<=",2,$1,$3); }
-	| arith-expr GT arith-expr 	{ $$ = new_subtree(">",2,$1,$3);  }
-	| arith-expr GE arith-expr 	{ $$ = new_subtree(">=",2,$1,$3); }
+	arith-expr EQ arith-expr 	{ $$ = new_subtree(_EQ,0,2,$1,$3); }
+	| arith-expr NEQ arith-expr { $$ = new_subtree(_NEQ,0,2,$1,$3); }
+	| arith-expr LT arith-expr 	{ $$ = new_subtree(_LT,0,2,$1,$3);  }
+	| arith-expr LE arith-expr 	{ $$ = new_subtree(_LE,0,2,$1,$3); }
+	| arith-expr GT arith-expr 	{ $$ = new_subtree(_GT,0,2,$1,$3);  }
+	| arith-expr GE arith-expr 	{ $$ = new_subtree(_GT,0,2,$1,$3); }
 	;
 
 //bool-op: EQ | NEQ | LT | LE | GT | GE;
 
 arith-expr: 
-	arith-expr PLUS arith-expr 		{ $$ = new_subtree("+",2,$1,$3); }
-	| arith-expr MINUS arith-expr	{ $$ = new_subtree("-",2,$1,$3); }
-	| arith-expr TIMES arith-expr	{ $$ = new_subtree("*",2,$1,$3); }
-	| arith-expr OVER arith-expr	{ $$ = new_subtree("/",2,$1,$3); }
-	| LPAREN arith-expr RPAREN		{ $$ = new_subtree("+",1,$2); 	 }
+	arith-expr PLUS arith-expr 		{ $$ = new_subtree(_PLUS,0,2,$1,$3); }
+	| arith-expr MINUS arith-expr	{ $$ = new_subtree(_MINUS,0,2,$1,$3); }
+	| arith-expr TIMES arith-expr	{ $$ = new_subtree(_TIMES,0,2,$1,$3); }
+	| arith-expr OVER arith-expr	{ $$ = new_subtree(_OVER,0,2,$1,$3); }
+	| LPAREN arith-expr RPAREN		{ $$ = $2;	 }
 	| lval 							{ $$ = $1; }
 	| input-call					{ $$ = $1; }
 	| user-func-call				{ $$ = $1; } //checar funcao
