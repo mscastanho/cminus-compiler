@@ -105,3 +105,73 @@ void print_sym_table(SymTable* st) {
 void free_sym_table(SymTable* st) {
     free(st);
 }
+
+void clean_sym_table(SymTable* st) {
+	st->size = 0;
+}
+
+
+// Functions Table
+// ----------------------------------------------------------------------------
+
+#define FUNC_MAX_SIZE 128
+#define FUNC_TABLE_MAX_SIZE 100
+
+typedef struct {
+  char name[FUNC_MAX_SIZE];
+  int line;
+  int arity;
+
+} FuncEntry;
+
+struct func_table {
+    FuncEntry t[FUNC_TABLE_MAX_SIZE];
+    int size;
+};
+
+FuncTable* create_func_table() {
+    FuncTable *ft = malloc(sizeof * ft);
+    ft->size = 0;
+    return ft;
+}
+
+int lookup_func(FuncTable* ft, char* s) {
+    for (int i = 0; i < ft->size; i++) {
+        if (strcmp(ft->t[i].name, s) == 0)  {
+            return i;
+        }
+    }
+    return -1;
+}
+
+int add_func(FuncTable* ft, char* s, int arity, int line) {
+    strcpy(ft->t[ft->size].name, s);
+	ft->t[ft->size].arity = arity;
+    ft->t[ft->size].line = line;
+    int old_side = ft->size;
+    ft->size++;
+    return old_side;
+}
+
+char* get_func_name(FuncTable* ft, int i) {
+    return ft->t[i].name;
+}
+
+int get_func_arity(FuncTable* ft, int i) {
+	return ft->t[i].arity;
+}
+
+int get_func_line(FuncTable* ft, int i) {
+    return ft->t[i].line;
+}
+
+void print_func_table(FuncTable* ft) {
+    printf("Functions table:\n");
+    for (int i = 0; i < ft->size; i++) {
+         printf("Entry %d -- name: %s, arity: %d, line: %d\n", i, get_func_name(ft, i), get_func_arity(ft, i), get_func_line(ft, i));
+    }
+}
+
+void free_func_table(FuncTable* ft) {
+    free(ft);
+}

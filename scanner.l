@@ -14,7 +14,7 @@
 
 extern LitTable* literals;
 extern SymTable* symbols;
-//extern FuncTable* functions;
+extern FuncTable* functions;
 char idRead[100];
 
 %}
@@ -42,8 +42,8 @@ char idRead[100];
 
 <olcomment>[^"\n"] 		{;}
 
-["].*["] 				{ int pos = add_literal(literals,yytext);
-						  yylval = new_node(_STRING,pos); 
+["].*["] 				{ int ltPos = add_literal(literals,yytext);
+						  yylval = new_node(_STRING,ltPos); 
 						  return STRING;}
 
 "else" 					{ return ELSE;}
@@ -72,9 +72,11 @@ char idRead[100];
 "write" 				{ yylval = new_node(_WRITE,0); 
 						  return WRITE;}
 
-[a-zA-Z][a-zA-Z0-9]* 	{ //int pos = lookup_var(symbols,yytext); 
-						  //strcpy(idRead,yytext); 
-						  yylval = new_node(_ID,0); 
+[a-zA-Z][a-zA-Z0-9]* 	{ int stPos = lookup_var(symbols,yytext);
+						  strcpy(idRead,yytext); 
+						  yylval = new_node(_ID,stPos);
+						  int ftPos = lookup_func(functions,yytext);
+						  set_tree_data2(yylval,ftPos); 
 						  return ID;}
 
 "+" 					{ yylval = new_node(_PLUS,0); 

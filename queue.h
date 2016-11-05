@@ -1,5 +1,5 @@
-#ifndef queue_H
-#define queue_H
+#ifndef QUEUE_H
+#define QUEUE_H
 
 struct queueNode;
 
@@ -9,6 +9,9 @@ Queue* Q_new(Tree* t);
 
 // This adds an element to the end of the queue 
 Queue* Q_addNode(Queue* q, Tree* t);
+
+// Returns the current queue size
+int Q_getSize(Queue* q);
 
 // This removes an element from the beginning of the queue
 // and returns it to p

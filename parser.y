@@ -21,8 +21,10 @@
 int yylex(void);
 void yyerror(char const *s);
 Queue* add_children_from_q(Tree* parent, Queue* list);
-void check_var_redecl(int sym_table_pos);
-void check_var_undecl(int sym_table_pos);
+int check_var_rdcl(int sym_table_pos);
+void check_var_ndcl(int sym_table_pos);
+int check_func_rdcl(int func_table_pos, int arity);
+void check_func_ndcl(int func_table_pos, int arity);
 
 extern int yylineno;
 extern char idRead[100];
@@ -36,7 +38,7 @@ Queue* argList = NULL;
 
 LitTable* literals;
 SymTable* symbols;
-//FuncTable* functions;
+FuncTable* functions;
 
 #define VAR_RDCL_ERROR_MSG "SEMANTIC ERROR (%d): variable '%s' already declared at line %d.\n"
 #define VAR_NDCL_ERROR_MSG "SEMANTIC ERROR (%d): variable '%s' was not declared.\n"  
@@ -83,11 +85,15 @@ func-decl-list:
 	;
 
 func-decl: 
-	func-header func-body { $$ = new_subtree(FUNC_DECL,0,2,$1,$2); }
+	func-header func-body { clean_sym_table(symbols); // The scope of a variable is only the function where it was defined 
+							$$ = new_subtree(FUNC_DECL,0,2,$1,$2); }
 	;
 
 func-header: 
-	ret-type ID LPAREN params RPAREN { $$ = new_subtree(FUNC_HEADER,0,3,$1,$2,$4); }
+	ret-type ID LPAREN params RPAREN { int tablePos = get_tree_data($2);
+									   int arity = get_tree_data($4); // Number of parameters is saved in data field of 'params'  
+									   check_func_rdcl(tablePos,arity); 
+									   $$ = new_subtree(FUNC_HEADER,0,3,$1,$2,$4); }
 	;
 
 func-body: 
@@ -96,12 +102,16 @@ func-body:
 	
 opt-var-decl: 
 	%empty 			{ $$ = new_node(VAR_LIST,0); }
-    | var-decl-list { Tree* n = new_node(VAR_LIST,0); varList = add_children_from_q(n,varList); $$ = n; }
+    | var-decl-list { Tree* n = new_node(VAR_LIST,0); 
+					  varList = add_children_from_q(n,varList); 
+					  $$ = n; }
 	;
 
 opt-stmt-list: 
 	%empty		{ $$ = new_node(BLOCK,0); }
-    | stmt-list { Tree* n = new_node(BLOCK,0); stmtList = add_children_from_q(n,stmtList); $$ = n; }
+    | stmt-list { Tree* n = new_node(BLOCK,0); 
+				  stmtList = add_children_from_q(n,stmtList); 
+				  $$ = n; }
 	;
 
 ret-type: 
@@ -111,7 +121,10 @@ ret-type:
 
 params: 
 	VOID			{ $$ = new_node(PARAMS,0); }
-	| param-list	{ Tree* n = new_node(PARAMS,0); paramList = add_children_from_q(n,paramList); $$ = n; }
+	| param-list	{ int nParams = get_children_number($1); 
+					  Tree* n = new_node(PARAMS,nParams); 
+					  paramList = add_children_from_q(n,paramList); 
+					  $$ = n; }
 	;
 
 param-list: 
@@ -120,8 +133,10 @@ param-list:
 	;
 
 param: 
-	INT ID						{ $$ = $1; } // diferenciar constante de vetor
-	| INT ID LBRACK RBRACK		{ $$ = $1; } // -----	
+	INT ID						{ int pos = add_var(symbols,idRead,yylineno); 
+								  $$ = new_node(SVAR,pos); }
+	| INT ID LBRACK RBRACK		{ int pos = add_var(symbols,idRead,yylineno); 
+								  $$ = new_node(CVAR,pos); }
 	;
 
 var-decl-list: 
@@ -130,8 +145,12 @@ var-decl-list:
 	;
 
 var-decl: 
-	INT ID SEMI							{ $$ = $1; } // diferenciar constante de vetor
-	| INT ID LBRACK NUM RBRACK SEMI		{ $$ = new_subtree(CVAR,0,1,$4); } // ---------
+	INT ID SEMI							{ int pos = get_tree_data($2);
+										  pos = check_var_rdcl(pos); 
+										  $$ = new_node(SVAR,pos); }
+	| INT ID LBRACK NUM RBRACK SEMI		{ int pos = get_tree_data($2);
+										  pos = check_var_rdcl(pos); 
+										  $$ = new_subtree(CVAR,pos,1,$4); }
 	;
 
 stmt-list: 
@@ -152,9 +171,15 @@ assign-stmt:
 	;
 
 lval: 
-	ID							{ $$ = $1; }
-    | ID LBRACK NUM RBRACK 		{ $$ = new_subtree(CVAR,0,1,$3); }
-    | ID LBRACK ID RBRACK		{ $$ = new_subtree(CVAR,0,1,$3); }
+	ID							{ int pos = get_tree_data($1);
+								  check_var_ndcl(pos); 
+								  $$ = new_node(SVAR,pos); }
+    | ID LBRACK NUM RBRACK 		{ int pos = get_tree_data($1); 
+								  check_var_ndcl(pos);
+								  $$ = new_subtree(CVAR,pos,1,$3); }
+    | ID LBRACK ID RBRACK		{ int pos = get_tree_data($1);
+								  check_var_ndcl(pos);
+								  $$ = new_subtree(CVAR,pos,1,$3); }
 	;
 
 if-stmt: 
@@ -190,16 +215,24 @@ output-call:
 	;
 
 write-call: 
-	WRITE LPAREN STRING RPAREN { Tree* s = new_node(_STRING,0); $$ = new_subtree(WRITE,0,1,s); } //checar string
+	WRITE LPAREN STRING RPAREN { int ltPos = get_tree_data($3);
+								 Tree* s = new_node(_STRING,ltPos); 
+								 $$ = new_subtree(WRITE,0,1,s); }
 	;
 
 user-func-call: 
-	ID LPAREN opt-arg-list RPAREN { $$ = new_subtree(USER_FUNC,0,1,$3); } // checar funcao
+	ID LPAREN opt-arg-list RPAREN { int ftPos = get_tree_data2($1);
+									int arity = get_tree_data($3);
+									check_func_ndcl(ftPos,arity); 
+									$$ = new_subtree(USER_FUNC,ftPos,1,$3); }
 	;
 
 opt-arg-list: 
 	%empty 	   { $$ = new_node(ARG_LIST,0);}
-    | arg-list { Tree* n = new_node(ARG_LIST,0); argList = add_children_from_q(n,argList); $$ = n; }
+    | arg-list { int nArgs = get_children_number($1);
+				 Tree* n = new_node(ARG_LIST,nArgs); // Node of type ARG_LIST has number of arguments in 'data' field 
+				 argList = add_children_from_q(n,argList); 
+				 $$ = n; }
 	;
 
 arg-list: 
@@ -216,17 +249,15 @@ bool-expr:
 	| arith-expr GE arith-expr 	{ $$ = new_subtree(_GT,0,2,$1,$3); }
 	;
 
-//bool-op: EQ | NEQ | LT | LE | GT | GE;
-
 arith-expr: 
 	arith-expr PLUS arith-expr 		{ $$ = new_subtree(_PLUS,0,2,$1,$3); }
 	| arith-expr MINUS arith-expr	{ $$ = new_subtree(_MINUS,0,2,$1,$3); }
 	| arith-expr TIMES arith-expr	{ $$ = new_subtree(_TIMES,0,2,$1,$3); }
 	| arith-expr OVER arith-expr	{ $$ = new_subtree(_OVER,0,2,$1,$3); }
-	| LPAREN arith-expr RPAREN		{ $$ = $2;	 }
+	| LPAREN arith-expr RPAREN		{ $$ = $2; }
 	| lval 							{ $$ = $1; }
 	| input-call					{ $$ = $1; }
-	| user-func-call				{ $$ = $1; } //checar funcao
+	| user-func-call				{ $$ = $1; }
 	| NUM							{ $$ = $1; }	
 	;
 
@@ -252,19 +283,42 @@ Queue* add_children_from_q(Tree* parent, Queue* list){
 	return list;
 }
 
-void check_var_redecl(int sym_table_pos){
+int check_var_rdcl(int sym_table_pos){
 	if(sym_table_pos == -1) 
-		add_var(symbols,idRead,yylineno);
+		return add_var(symbols,idRead,yylineno);
 	else{
 		printf(VAR_RDCL_ERROR_MSG,yylineno,idRead,get_line(symbols,sym_table_pos));
-		exit(1);								
+		exit(1);
+		return 0;								
 	}
 }
 
-void check_var_undecl(int sym_table_pos){
+void check_var_ndcl(int sym_table_pos){
 	if(sym_table_pos == -1){
 		printf(VAR_NDCL_ERROR_MSG,yylineno,idRead);
 		exit(1);
+	}
+}
+
+int check_func_rdcl(int func_table_pos, int arity){
+	if(func_table_pos == -1) 
+		return add_func(functions,idRead,arity,yylineno);
+	else{
+		printf(FUNC_RDCL_ERROR_MSG,yylineno,idRead,get_func_line(functions,func_table_pos));
+		exit(1);
+		return 0;								
+	}
+}
+
+void check_func_ndcl(int func_table_pos, int arity){
+	if(func_table_pos == -1){
+		printf(FUNC_NDCL_ERROR_MSG,yylineno,idRead);
+		exit(1);
+	}else{
+		int declaredArity = get_func_arity(functions, func_table_pos);
+			
+		if(declaredArity != arity)
+			printf(FUNC_NARG_ERROR_MSG,yylineno,idRead,arity,declaredArity);
 	}
 }
 
@@ -272,10 +326,15 @@ void check_var_undecl(int sym_table_pos){
 int main() {
   //yydebug = 1; // Enter debug mode.
 
-  if (yyparse() == 0){
-	print_dot(ast);
-	//free_tree(ast);
-	//printf("PARSE SUCESSFUL!\n");
-  }
-  return 0;
+	literals = create_lit_table();
+ 	symbols = create_sym_table();
+	functions = create_func_table();
+
+	if (yyparse() == 0){
+		print_dot(ast);
+		//free_tree(ast);
+		//printf("PARSE SUCESSFUL!\n");
+	}
+
+  	return 0;
 }

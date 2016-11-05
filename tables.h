@@ -62,5 +62,46 @@ void print_sym_table(SymTable* st);
 // Clear the allocated structure.
 void free_sym_table(SymTable* st);
 
+// Remove all entries in the table, without freeing it
+void clean_sym_table(SymTable* st);
+
+// Functions Table
+// ----------------------------------------------------------------------------
+
+// Opaque structure.
+// For simplicity, the table is implemented as a sequential list.
+// This table stores the function name, its arity and the declaration line.
+struct func_table;
+typedef struct func_table FuncTable;
+
+// Creates an empty function table.
+FuncTable* create_func_table();
+
+// Adds a fresh function to the table.
+// No check is made by this function, so make sure to call 'lookup_func' first.
+// Returns the index where the function was inserted.
+int add_func(FuncTable* ft, char* s, int arity, int line);
+
+// Returns the index where the given function is stored or -1 otherwise.
+int lookup_func(FuncTable* ft, char* s);
+
+// Returns the function name stored at the given index.
+// No check is made by this function, so make sure that the index is valid first.
+char* get_func_name(FuncTable* ft, int i);
+
+// Returns the of the function stored at the given index.
+// No check is made by this function, so make sure that the index is valid first.
+int get_func_arity(FuncTable* ft, int i);
+
+// Returns the declaration line of the function stored at the given index.
+// No check is made by this function, so make sure that the index is valid first.
+int get_func_line(FuncTable* ft, int i);
+
+// Prints the given table to stdout.
+void print_func_table(FuncTable* ft);
+
+// Clear the allocated structure.
+void free_func_table(FuncTable* ft);
+
 #endif // TABLES_H
 

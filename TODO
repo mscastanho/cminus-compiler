@@ -1,0 +1,6 @@
+- Change static list inside TreeNode element to a dynamic one
+- Check redeclaration of variables and functions
+- Check IDS
+- Transform queue into list (?)
+- Check if all error messages are being printed
+- Be careful with symbol scopes

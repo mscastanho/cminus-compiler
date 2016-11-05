@@ -5,13 +5,14 @@
 #include <string.h>
 #include "tree.h"
 
-#define CHILDREN_LIMIT 7
+#define CHILDREN_LIMIT 100
 #define TEXT_LIMIT 256
 #define MAX_STRING_SIZE 64
 
 struct node {
     nodeType type;
-    int data;
+    int data; 
+	int data2; // Necessary to save position at sym table at data and at func table at data2 
     int count;
     Tree* child[CHILDREN_LIMIT];
 };
@@ -20,11 +21,30 @@ Tree* new_node(nodeType type, int data) {
     Tree* node = malloc(sizeof * node);
     node->type = type;
     node->count = 0;
+	node->data = data;
+	node->data2 = -1;
     for (int i = 0; i < CHILDREN_LIMIT; i++) {
         node->child[i] = NULL;
     }
     return node;
 }
+
+int get_tree_data(Tree* t){
+	return t->data;
+}
+
+int get_tree_data2(Tree* t){
+	return t->data2;
+}
+
+void set_tree_data2(Tree *t, int data2){
+	t->data2 = data2;
+}
+
+int get_children_number(Tree *t){
+	return t->count;
+}
+
 
 void add_child(Tree *parent, Tree *child) {
     if (parent->count == CHILDREN_LIMIT) {

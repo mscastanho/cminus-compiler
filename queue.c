@@ -33,6 +33,22 @@ Queue* Q_addNode(Queue* q, Tree* t){
 	return q;
 }
 
+int Q_getSize(Queue* q){
+	
+	if(q == NULL)
+		return 0;
+
+	Queue* it = q;
+	int cnt = 1;
+
+	while(it->next != NULL){
+		cnt++;		
+		it = it->next;		
+	}
+
+	return cnt;
+}
+
 // This removes an element from the beginning of the queue
 // and returns it to p
 Queue* Q_removeNode(Queue* q, Tree** r){

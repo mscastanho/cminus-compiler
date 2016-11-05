@@ -43,6 +43,14 @@ typedef struct node Tree;
 
 Tree* new_node(nodeType type, int data);
 
+int get_tree_data(Tree* t);
+
+int get_tree_data2(Tree* t);
+
+void set_tree_data2(Tree *t, int data2);
+
+int get_children_number(Tree *t);
+
 void add_child(Tree *parent, Tree *child);
 
 Tree* new_subtree(nodeType type, int data, int child_count, ...);
