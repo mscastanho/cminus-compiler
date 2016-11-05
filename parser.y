@@ -12,16 +12,20 @@
 %define parse.trace
 
 %{
+#include <stdlib.h>
 #include <stdio.h>
 #include "tree.h"
 #include "queue.h"
+#include "tables.h"
 
 int yylex(void);
 void yyerror(char const *s);
-void add_children_from_list(Tree* parent, Tree** list, int* idx);
 Queue* add_children_from_q(Tree* parent, Queue* list);
+void check_var_redecl(int sym_table_pos);
+void check_var_undecl(int sym_table_pos);
 
 extern int yylineno;
+extern char idRead[100];
 
 Tree *ast;
 Queue* paramList = NULL; 
@@ -30,7 +34,16 @@ Queue* varList = NULL;
 Queue* stmtList = NULL;
 Queue* argList = NULL;
 
+LitTable* literals;
+SymTable* symbols;
+//FuncTable* functions;
 
+#define VAR_RDCL_ERROR_MSG "SEMANTIC ERROR (%d): variable '%s' already declared at line %d.\n"
+#define VAR_NDCL_ERROR_MSG "SEMANTIC ERROR (%d): variable '%s' was not declared.\n"  
+
+#define FUNC_RDCL_ERROR_MSG "SEMANTIC ERROR (%d): function '%s' already declared at line %d.\n"
+#define FUNC_NDCL_ERROR_MSG "SEMANTIC ERROR (%d): function '%s' was not declared.\n"  
+#define FUNC_NARG_ERROR_MSG "SEMANTIC ERROR (%d): function '%s' was called with %d arguments but declared with %d parameters"
 %}
 
 %define api.value.type {Tree*}
@@ -219,14 +232,11 @@ arith-expr:
 
 %%
 
-void add_children_from_list(Tree* parent, Tree** list, int* idx){
-	int i; 
-
-	for(i=0;i<*idx;i++) 
-		add_child(parent,list[i]);
-
-	*idx = 0;
+// Error handling
+void yyerror (char const *s){
+	printf("PARSE ERROR (%d): %s\n", yylineno, s);
 }
+
 
 Queue* add_children_from_q(Tree* parent, Queue* list){
 	Tree* t = NULL;
@@ -242,10 +252,22 @@ Queue* add_children_from_q(Tree* parent, Queue* list){
 	return list;
 }
 
-// Error handling
-void yyerror (char const *s){
-	printf("PARSE ERROR (%d): %s\n", yylineno, s);
+void check_var_redecl(int sym_table_pos){
+	if(sym_table_pos == -1) 
+		add_var(symbols,idRead,yylineno);
+	else{
+		printf(VAR_RDCL_ERROR_MSG,yylineno,idRead,get_line(symbols,sym_table_pos));
+		exit(1);								
+	}
 }
+
+void check_var_undecl(int sym_table_pos){
+	if(sym_table_pos == -1){
+		printf(VAR_NDCL_ERROR_MSG,yylineno,idRead);
+		exit(1);
+	}
+}
+
 
 int main() {
   //yydebug = 1; // Enter debug mode.
