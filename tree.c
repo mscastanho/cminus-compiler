@@ -12,7 +12,6 @@
 struct node {
     nodeType type;
     int data; 
-	int data2; // Necessary to save position at sym table at data and at func table at data2 
     int count;
     Tree* child[CHILDREN_LIMIT];
 };
@@ -22,7 +21,6 @@ Tree* new_node(nodeType type, int data) {
     node->type = type;
     node->count = 0;
 	node->data = data;
-	node->data2 = -1;
     for (int i = 0; i < CHILDREN_LIMIT; i++) {
         node->child[i] = NULL;
     }
@@ -33,12 +31,8 @@ int get_tree_data(Tree* t){
 	return t->data;
 }
 
-int get_tree_data2(Tree* t){
-	return t->data2;
-}
-
-void set_tree_data2(Tree *t, int data2){
-	t->data2 = data2;
+void set_tree_data(Tree* t, int data){
+	t->data = data;
 }
 
 int get_children_number(Tree *t){
@@ -71,32 +65,13 @@ Tree* new_subtree(nodeType type, int data, int child_count, ...) {
     return node;
 }
 
-void print_node(Tree *node, int level) {
-    printf("%d: Node -- Addr: %p -- Type: %d -- Count: %d\n",
-           level, node, node->type, node->count);
-    for (int i = 0; i < node->count; i++) {
-        print_node(node->child[i], level+1);
-    }
-}
-
-void print_tree(Tree *tree) {
-    print_node(tree, 0);
-}
-
-void free_tree(Tree *tree) {
-    for (int i = 0; i < tree->count; i++) {
-        free_tree(tree->child[i]);
-    }
-    free(tree);
-}
-
 void type2str(nodeType type, int data, char* str){
 
 	char aux[MAX_STRING_SIZE];
 
 	switch(type){
-		case PROGRAM: 
-					strcpy(str,"program");
+		case FUNC_LIST: 
+					strcpy(str,"func-list");
 					break;
 		case FUNC_DECL:
 					strcpy(str,"func-decl");
@@ -114,7 +89,7 @@ void type2str(nodeType type, int data, char* str){
 					strcpy(str,"block");
 					break;
 		case PARAMS:
-					strcpy(str,"params");
+					strcpy(str,"param-list");
 					break;
 		case CVAR:
 					sprintf(aux,"cvar,%d",data);
@@ -202,6 +177,29 @@ void type2str(nodeType type, int data, char* str){
 					break;
 	}
 }
+
+void print_node(Tree *node, int level) {
+	 char text[MAX_STRING_SIZE];
+	 type2str(node->type,node->data,text);
+
+    printf("%d: Node -- Addr: %p -- Type: %s -- Count: %d\n",
+           level, node, text, node->count);
+    for (int i = 0; i < node->count; i++) {
+        print_node(node->child[i], level+1);
+    }
+}
+
+void print_tree(Tree *tree) {
+    print_node(tree, 0);
+}
+
+void free_tree(Tree *tree) {
+    for (int i = 0; i < tree->count; i++) {
+        free_tree(tree->child[i]);
+    }
+    free(tree);
+}
+
 
 // Dot output.
 

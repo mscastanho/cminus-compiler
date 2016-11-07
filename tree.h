@@ -2,7 +2,7 @@
 #define TREE_H
 
 typedef enum tp {
-	PROGRAM,
+	FUNC_LIST,
 	FUNC_DECL,
 	FUNC_HEADER,
 	FUNC_BODY,
@@ -44,6 +44,8 @@ typedef struct node Tree;
 Tree* new_node(nodeType type, int data);
 
 int get_tree_data(Tree* t);
+
+void set_tree_data(Tree* t, int data);
 
 int get_tree_data2(Tree* t);
 
