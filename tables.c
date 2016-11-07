@@ -10,6 +10,8 @@
 #define LITERAL_MAX_SIZE 128
 #define LITERALS_TABLE_MAX_SIZE 100
 
+extern int currentScope; 
+
 struct lit_table {
     char t[LITERALS_TABLE_MAX_SIZE][LITERAL_MAX_SIZE];
     int size;
@@ -57,6 +59,7 @@ void free_lit_table(LitTable* lt) {
 typedef struct {
   char name[SYMBOL_MAX_SIZE];
   int line;
+  int scope;
 } Entry;
 
 struct sym_table {
@@ -70,18 +73,19 @@ SymTable* create_sym_table() {
     return st;
 }
 
-int lookup_var(SymTable* st, char* s) {
+int lookup_var(SymTable* st, char* s, int scope) {
     for (int i = 0; i < st->size; i++) {
-        if (strcmp(st->t[i].name, s) == 0)  {
+        if (strcmp(st->t[i].name, s) == 0 && scope = currentScope)  {
             return i;
         }
     }
     return -1;
 }
 
-int add_var(SymTable* st, char* s, int line) {
+int add_var(SymTable* st, char* s, int line, int scope) {
     strcpy(st->t[st->size].name, s);
     st->t[st->size].line = line;
+	st->t[st->size].scope = scope;
     int old_side = st->size;
     st->size++;
     return old_side;
@@ -95,10 +99,14 @@ int get_line(SymTable* st, int i) {
     return st->t[i].line;
 }
 
+int get_scope(SymTable* st, int i) {
+	return st->t[i].scope;
+}
+
 void print_sym_table(SymTable* st) {
     printf("Symbols table:\n");
     for (int i = 0; i < st->size; i++) {
-         printf("Entry %d -- name: %s, line: %d\n", i, get_name(st, i), get_line(st, i));
+         printf("Entry %d -- name: %s, line: %d, scope: %d\n", i, get_name(st, i), get_line(st, i), get_scope(st, i));
     }
 }
 
