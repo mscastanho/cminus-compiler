@@ -6,7 +6,7 @@ do
 	myoutput="$filename.myout"
 	output="$filename.out"
 	printf "Diff de $filename:\n"
-	../parser < ./in/$i | diff ./out/$output -
+	../trab3 < ./in/$i | diff ./out/$output -
 	printf "\n\n"
 done
 

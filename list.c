@@ -1,49 +1,49 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "tree.h"
-#include "stack.h"
+#include "list.h"
 
-struct stackNode {
+struct listNode {
 	Tree* value;
-	Stack* next;
+	List* next;
 };
 
-Stack* S_new(Tree* t){
-	Stack* s = (Stack*) malloc(sizeof(Stack));
+List* L_new(Tree* t){
+	List* s = (List*) malloc(sizeof(List));
 	s->value = t;
 	s->next = NULL;
 
 	return s;
 }
 
-// This adds an element to the end of the sueue 
-Stack* S_addNode(Stack* s, Tree* t){
-		
-	if(s == NULL)
-		return S_new(t);
+// This adds an element to the end of the list
+List* L_pushBack(List* s, Tree* t){
 
-	Stack* it = s;
+	if(s == NULL)
+		return L_new(t);
+
+	List* it = s;
 
 	while(it->next != NULL)
 		it = it->next;
 
-	Stack* n = S_new(t);
+	List* n = L_new(t);
 	it->next = n;
 
 	return s;
 }
 
-int S_getSize(Stack* s){
-	
+int L_getSize(List* s){
+
 	if(s == NULL)
 		return 0;
 
-	Stack* it = s;
+	List* it = s;
 	int cnt = 1;
 
 	while(it->next != NULL){
-		cnt++;		
-		it = it->next;		
+		cnt++;
+		it = it->next;
 	}
 
 	return cnt;
@@ -51,20 +51,7 @@ int S_getSize(Stack* s){
 
 // This removes an element from the beginning of the sueue
 // and returns it to p
-Stack* S_removeNode(Stack* s, Tree** r){
-
-	// from beginning
-	/*if(s == NULL)
-		return s;
-
-	Stack* ns = s->next;
-	s->next = NULL;
-
-	*r = s->value;
-	
-	S_free(s);
-
-	return ns;*/
+List* L_popBack(List* s, Tree** r){
 
 	//from end
 	if(s == NULL)
@@ -72,52 +59,65 @@ Stack* S_removeNode(Stack* s, Tree** r){
 
 	if(s->next == NULL){
 		*r = s->value;
-		S_free(s);
+		L_free(s);
 		return NULL;
 	}
 
-	Stack* aux = NULL;
-	Stack* it = s;
+	List* aux = NULL;
+	List* it = s;
 
 	while(it->next != NULL){
 		aux = it;
-		it = it->next;	
+		it = it->next;
 	}
 
 	aux->next = NULL;
-	
+
 	*r = it->value;
-	
-	S_free(it);
+
+	L_free(it);
 
 	return s;
 }
 
-void S_print(Stack* s){
+List* L_popFront (List* s, Tree** r){
+
+	if(s == NULL)
+		return s;
+
+	List* ns = s->next;
+	s->next = NULL;
+
+	*r = s->value;
+
+	L_free(s);
+
+	return ns;
+}
+
+void L_print(List* s){
 
 	if(s == NULL)
 		printf("Empty sueue.\n");
 	else{
 
-		Stack* it;
+		List* it;
 
 		for(it = s ; it != NULL ; it = it->next){
 			printf("[%p: next=%p value=%p] -> ",it,it->next,it->value);
 		}
-		
+
 		printf("\n");
 	}
 }
 
-void S_free(Stack* s){
+void L_free(List* s){
 	if(s != NULL){
-		Stack *it, *aux;
+		List *it, *aux;
 
 		for(it = s ; it != NULL ; it = aux){
-			aux = it->next;			
+			aux = it->next;
 			free(s);
 		}
 	}
 }
-
-

@@ -15,6 +15,8 @@
 extern LitTable* literals;
 extern SymTable* symbols;
 extern FuncTable* functions;
+extern int currentScope;
+
 char idRead[256];
 
 %}
@@ -73,7 +75,7 @@ char idRead[256];
 						  return WRITE;}
 
 [a-zA-Z][a-zA-Z0-9]* 	{ strcpy(idRead,yytext);
-						  int stPos = lookup_var(symbols,yytext);
+						  int stPos = lookup_var(symbols,yytext,currentScope);
 						  yylval = new_node(_ID,stPos); 
 						  return ID;}
 

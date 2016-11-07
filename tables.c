@@ -10,7 +10,7 @@
 #define LITERAL_MAX_SIZE 128
 #define LITERALS_TABLE_MAX_SIZE 100
 
-extern int currentScope; 
+//extern int currentScope; 
 
 struct lit_table {
     char t[LITERALS_TABLE_MAX_SIZE][LITERAL_MAX_SIZE];
@@ -73,9 +73,9 @@ SymTable* create_sym_table() {
     return st;
 }
 
-int lookup_var(SymTable* st, char* s, int scope) {
+int lookup_var(SymTable* st, char* s, int currentScope) {
     for (int i = 0; i < st->size; i++) {
-        if (strcmp(st->t[i].name, s) == 0 && scope = currentScope)  {
+        if (strcmp(st->t[i].name, s) == 0 && st->t[i].scope == currentScope)  {
             return i;
         }
     }
@@ -85,7 +85,7 @@ int lookup_var(SymTable* st, char* s, int scope) {
 int add_var(SymTable* st, char* s, int line, int scope) {
     strcpy(st->t[st->size].name, s);
     st->t[st->size].line = line;
-	st->t[st->size].scope = scope;
+	 st->t[st->size].scope = scope;
     int old_side = st->size;
     st->size++;
     return old_side;
@@ -104,7 +104,7 @@ int get_scope(SymTable* st, int i) {
 }
 
 void print_sym_table(SymTable* st) {
-    printf("Symbols table:\n");
+    printf("Variables table:\n");
     for (int i = 0; i < st->size; i++) {
          printf("Entry %d -- name: %s, line: %d, scope: %d\n", i, get_name(st, i), get_line(st, i), get_scope(st, i));
     }
@@ -154,7 +154,7 @@ int lookup_func(FuncTable* ft, char* s) {
 
 int add_func(FuncTable* ft, char* s, int arity, int line) {
     strcpy(ft->t[ft->size].name, s);
-	ft->t[ft->size].arity = arity;
+	 ft->t[ft->size].arity = arity;
     ft->t[ft->size].line = line;
     int old_side = ft->size;
     ft->size++;
@@ -176,7 +176,7 @@ int get_func_line(FuncTable* ft, int i) {
 void print_func_table(FuncTable* ft) {
     printf("Functions table:\n");
     for (int i = 0; i < ft->size; i++) {
-         printf("Entry %d -- name: %s, arity: %d, line: %d\n", i, get_func_name(ft, i), get_func_arity(ft, i), get_func_line(ft, i));
+         printf("Entry %d -- name: %s, line: %d, arity: %d\n", i, get_func_name(ft, i), get_func_line(ft, i), get_func_arity(ft, i));
     }
 }
 

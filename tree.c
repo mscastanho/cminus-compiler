@@ -7,11 +7,11 @@
 
 #define CHILDREN_LIMIT 100
 #define TEXT_LIMIT 256
-#define MAX_STRING_SIZE 64
+#define MAX_STRING_SIZE 256
 
 struct node {
     nodeType type;
-    int data; 
+    int data;
     int count;
     Tree* child[CHILDREN_LIMIT];
 };
@@ -33,6 +33,10 @@ int get_tree_data(Tree* t){
 
 void set_tree_data(Tree* t, int data){
 	t->data = data;
+}
+
+void set_tree_type(Tree *t, nodeType type){
+	t->type = type;
 }
 
 int get_children_number(Tree *t){
@@ -70,26 +74,26 @@ void type2str(nodeType type, int data, char* str){
 	char aux[MAX_STRING_SIZE];
 
 	switch(type){
-		case FUNC_LIST: 
-					strcpy(str,"func-list");
+		case FUNC_LIST:
+					strcpy(str,"func_list");
 					break;
 		case FUNC_DECL:
-					strcpy(str,"func-decl");
+					strcpy(str,"func_decl");
 					break;
 		case FUNC_HEADER:
-					strcpy(str,"func-header");
+					strcpy(str,"func_header");
 					break;
 		case FUNC_BODY:
-					strcpy(str,"func-body");
+					strcpy(str,"func_body");
 					break;
 		case VAR_LIST:
-					strcpy(str,"var-list");
+					strcpy(str,"var_list");
 					break;
 		case BLOCK:
 					strcpy(str,"block");
 					break;
 		case PARAMS:
-					strcpy(str,"param-list");
+					strcpy(str,"param_list");
 					break;
 		case CVAR:
 					sprintf(aux,"cvar,%d",data);
@@ -140,7 +144,7 @@ void type2str(nodeType type, int data, char* str){
 					strcpy(str,aux);
 					break;
 		case ARG_LIST:
-					strcpy(str,"arg-list");
+					strcpy(str,"arg_list");
 					break;
 		case _ASSIGN:
 					strcpy(str,"=");
@@ -211,7 +215,7 @@ int print_node_dot(Tree *node) {
 
 	 type2str(node->type,node->data,text);
 
-	 printf("node%d[label=\"%s\"];\n", my_nr, text);			
+	 printf("node%d[label=\"%s\"];\n", my_nr, text);
 
     for (int i = 0; i < node->count; i++) {
         int child_nr = print_node_dot(node->child[i]);
