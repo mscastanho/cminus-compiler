@@ -5,7 +5,7 @@
 #include <string.h>
 #include "tree.h"
 
-#define CHILDREN_LIMIT 100
+#define CHILDREN_LIMIT 256
 #define TEXT_LIMIT 256
 #define MAX_STRING_SIZE 256
 

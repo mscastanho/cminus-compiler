@@ -354,11 +354,11 @@ int main() {
 	if (yyparse() == 0){
 		//print_dot(ast);
 		printf("PARSE SUCESSFUL!\n\n");
-		print_lit_table(literals);
-		printf("\n\n");
-		print_sym_table(symbols);
-		printf("\n\n");
-		print_func_table(functions);
+		//print_lit_table(literals);
+		//printf("\n\n");
+		//print_sym_table(symbols);
+		//printf("\n\n");
+		//print_func_table(functions);
 	}
 
 
