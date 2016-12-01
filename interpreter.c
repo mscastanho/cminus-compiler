@@ -3,6 +3,7 @@
 #include "tree.h"
 #include "stack.h"
 #include "tables.h"
+#include "string.h"
 
 extern LitTable* literals;
 extern SymTable* symbols;
@@ -13,9 +14,21 @@ Stack* stack;
 // Forward declaration
 void rec_run_ast(Tree *ast);
 
+//index is to be used in case of cvar
+//should be 0 otherwise
 void store(Tree* node, int val){
   int pos = get_tree_data(node);
-  //set_currVal(symbols,pos,val);
+
+  if(get_tree_type(node) == CVAR){
+    int index;
+
+    //Execute child to get index
+    rec_run_ast(get_child(node,0));
+    stack = stack_pop(stack,&index);
+
+    set_cvar_currVal(symbols,pos,index,val);
+  }else
+    set_svar_currVal(symbols,pos,val);
 }
 
 void run_stmt_seq(Tree* node){
@@ -24,14 +37,44 @@ void run_stmt_seq(Tree* node){
 
 void run_func_list(Tree* node){
 
+  int cnt = get_children_number(node);
+  Tree* main_node;
+
+  for(int i = 0 ; i < cnt ; i++){
+
+    Tree* func_decl_node = get_child(node,i);
+
+    // Get index at functions table
+    int ftPos = get_tree_data(func_decl_node);
+
+    // Set function pointer
+    set_func_ptr(functions,ftPos,func_decl_node);
+
+    // Save pointer to main
+    if(ftPos != -1){
+      char* func_name = get_func_name(functions,ftPos);
+
+      if(!strcmp("main",func_name))
+        main_node = get_func_ptr(functions,ftPos);
+    }else
+      printf("ERROR AT INTERPRETER.C:RUN_FUNC_LIST()\n");
+  }
+
+  rec_run_ast(main_node);
 }
 
 void run_func_decl(Tree* node){
+  //Execute function header
+  rec_run_ast(get_child(node,0));
 
+  //Execute function body
+  rec_run_ast(get_child(node,1));
 }
 
 void run_func_header(Tree* node){
 
+  // Execute parameter list
+  rec_run_ast(get_child(node,2));
 }
 
 void run_param_list(Tree* node){
@@ -40,6 +83,11 @@ void run_param_list(Tree* node){
 
 void run_func_body(Tree* node){
 
+  // Run var declaration
+  rec_run_ast(get_child(node,0));
+
+  // Run statements
+  rec_run_ast(get_child(node,1));
 }
 
 void run_var_list(Tree* node){
@@ -55,28 +103,40 @@ void run_block(Tree* node){
 }
 
 void run_input(Tree* node){
+  int value;
 
+  scanf("%d",&value);
+
+  stack = stack_push(stack, value);
 }
 
 void run_output(Tree* node){
 
+  int value;
+
+  // Execute argument
+  rec_run_ast(get_child(node,0));
+
+  // Get value from stack
+  stack = stack_pop(stack, &value);
+
+  printf("%d",value);
 }
 
 void run_write(Tree* node){
 
-  int pos = get_tree_data(get_child(node,0));
-
-  //printf("%d",get_currVal(symbols,pos));
+  int ltPos = get_tree_data(get_child(node,0));
+  //TODO: Use strtok to split string by \n
+  printf("%s",get_literal(literals,ltPos));
 }
 
 void run_read(Tree* node){
   //stdin = fopen(ctermid(NULL), "r");
-  /*int temp;
+  int temp;
 
   scanf("%d",&temp);
 
   store(get_child(node, 0),temp);
-  */
 }
 
 void run_assign(Tree* node){
@@ -95,7 +155,7 @@ void run_num(Tree* node){
 void run_svar(Tree* node){
   int pos = get_tree_data(node);
 
-  //stack = stack_push(stack,get_currVal(symbols,pos));
+  stack = stack_push(stack,get_svar_currVal(symbols,pos));
 }
 
 void run_cvar(Tree* node){
@@ -110,7 +170,7 @@ void run_cvar(Tree* node){
 
   pos = get_tree_data(node);
 
-  //stack = stack_push(stack,get_currVal(symbols,pos));
+  stack = stack_push(stack,get_cvar_currVal(symbols,pos,index));
 
 }
 
@@ -300,6 +360,4 @@ void rec_run_ast(Tree *ast) {
 void run_ast(Tree *ast) {
     rec_run_ast(ast);
     //free(stack);
-    printf("Root: %p\n", ast);
-
 }

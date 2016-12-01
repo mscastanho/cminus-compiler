@@ -31,8 +31,9 @@ int yylex(void);
 void yyerror(char const *s);
 List* add_children_from_stack(Tree* parent, List* stack);
 int check_var_rdcl(int sym_table_pos);
+int check_cvar_rdcl(int sym_table_pos, int length);
 void check_var_ndcl(int sym_table_pos);
-int check_func_rdcl(int func_table_pos, int arity);
+int check_func_rdcl(int func_table_pos, int arity, Tree* funcPtr);
 void check_func_ndcl(int func_table_pos, int arity);
 
 Tree *ast;
@@ -92,15 +93,16 @@ func-decl-list:
 	;
 
 func-decl:
-	func-header func-body { $$ = new_subtree(FUNC_DECL,0,2,$1,$2); }
+	func-header func-body { int ftPos = get_tree_data($1);
+							$$ = new_subtree(FUNC_DECL,ftPos,2,$1,$2); }
 	;
 
 func-header:
 	ret-type ID { strcpy(tmpStr,idRead); } LPAREN params RPAREN { int ftPos = lookup_func(functions,tmpStr);
 																  int arity = get_children_number($5);
-									   							  ftPos = check_func_rdcl(ftPos,arity);
+									   							  ftPos = check_func_rdcl(ftPos,arity,NULL);
 																  set_tree_data($2,ftPos);
-									   							  $$ = new_subtree(FUNC_HEADER,0,3,$1,$2,$5); }
+									   							  $$ = new_subtree(FUNC_HEADER,ftPos,3,$1,$2,$5); }
 	;
 
 func-body:
@@ -143,7 +145,7 @@ param-list:
 param:
 	INT ID						{ int pos = add_var(symbols,idRead,yylineno,currentScope);
 								  $$ = new_node(SVAR,pos); }
-	| INT ID LBRACK RBRACK		{ int pos = add_var(symbols,idRead,yylineno,currentScope);
+	| INT ID LBRACK RBRACK		{ int pos = add_var(symbols,idRead,yylineno,currentScope); // I MIGHT HAVE A PROBLEM HERE
 								  $$ = new_node(CVAR,pos); }
 	;
 
@@ -157,7 +159,8 @@ var-decl:
 										  pos = check_var_rdcl(pos);
 										  $$ = new_node(SVAR,pos); }
 	| INT ID LBRACK NUM RBRACK SEMI		{ int pos = get_tree_data($2);
-										  pos = check_var_rdcl(pos);
+										  int length = get_tree_data($4);
+										  pos = check_cvar_rdcl(pos,length);
 										  $$ = new_subtree(CVAR,pos,1,$4); }
 	;
 
@@ -305,6 +308,16 @@ int check_var_rdcl(int sym_table_pos){
 	}
 }
 
+int check_cvar_rdcl(int sym_table_pos, int length){
+	if(sym_table_pos == -1)
+		return add_cvar(symbols,idRead,yylineno,currentScope,length);
+	else{
+		printf(VAR_RDCL_ERROR_MSG,yylineno,idRead,get_line(symbols,sym_table_pos));
+		exit(1);
+		return 0;
+	}
+}
+
 void check_var_ndcl(int sym_table_pos){
 	if(sym_table_pos == -1){
 		printf(VAR_NDCL_ERROR_MSG,yylineno,idRead);
@@ -312,12 +325,12 @@ void check_var_ndcl(int sym_table_pos){
 	}
 }
 
-int check_func_rdcl(int func_table_pos, int arity){
+int check_func_rdcl(int func_table_pos, int arity, Tree* funcPtr){
 
 	//print_func_table(functions);
 
 	if(func_table_pos == -1)
-		return add_func(functions,tmpStr,arity,yylineno);
+		return add_func(functions,tmpStr,arity,yylineno,NULL);
 	else{
 		printf(FUNC_RDCL_ERROR_MSG,yylineno,tmpStr,get_func_line(functions,func_table_pos));
 		exit(1);
@@ -364,7 +377,7 @@ int main() {
 		//print_func_table(functions);
 
 		stdin = fopen(ctermid(NULL), "r");
-    run_ast(ast);
+    	run_ast(ast);
 	}
 
 

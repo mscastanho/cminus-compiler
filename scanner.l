@@ -18,6 +18,7 @@ extern FuncTable* functions;
 extern int currentScope;
 
 char idRead[256];
+char aux[128];
 
 %}
 
@@ -44,8 +45,10 @@ char idRead[256];
 
 <olcomment>[^"\n"] 		{;}
 
-["].*["] 				{ int ltPos = add_literal(literals,yytext);
-						  yylval = new_node(_STRING,ltPos); 
+["].*["] 				{ yytext[strlen(yytext)-1] = '\0';
+						  strcpy(aux,yytext+1); //ignore leading and trailing quotes
+						  int ltPos = add_literal(literals,aux);
+						  yylval = new_node(_STRING,ltPos);
 						  return STRING;}
 
 "else" 					{ return ELSE;}

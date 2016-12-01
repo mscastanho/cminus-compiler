@@ -2,6 +2,7 @@
 #ifndef TABLES_H
 #define TABLES_H
 
+#include "tree.h"
 // Literals Table
 // ----------------------------------------------------------------------------
 
@@ -44,6 +45,9 @@ SymTable* create_sym_table();
 // No check is made by this function, so make sure to call 'lookup_var' first.
 // Returns the index where the variable was inserted.
 int add_var(SymTable* st, char* s, int line, int scope);
+
+// Same as the previous but for array variables
+int add_cvar(SymTable* st, char* s, int line, int scope, int length);
 
 // Returns the index where the given variable is stored or -1 otherwise.
 int lookup_var(SymTable* st, char* s, int currentScope);
@@ -98,7 +102,7 @@ FuncTable* create_func_table();
 // Adds a fresh function to the table.
 // No check is made by this function, so make sure to call 'lookup_func' first.
 // Returns the index where the function was inserted.
-int add_func(FuncTable* ft, char* s, int arity, int line);
+int add_func(FuncTable* ft, char* s, int arity, int line, Tree* functionPtr);
 
 // Returns the index where the given function is stored or -1 otherwise.
 int lookup_func(FuncTable* ft, char* s);
@@ -114,6 +118,14 @@ int get_func_arity(FuncTable* ft, int i);
 // Returns the declaration line of the function stored at the given index.
 // No check is made by this function, so make sure that the index is valid first.
 int get_func_line(FuncTable* ft, int i);
+
+// Returns a pointer to the AST node of the function stored at the given index.
+// No check is made by this function, so make sure that the index is valid first.
+Tree* get_func_ptr(FuncTable* ft, int i);
+
+// Saves a pointer to the AST node of the function stored at the given index.
+// No check is made by this function, so make sure that the index is valid first.
+void set_func_ptr(FuncTable* ft, int i, Tree* funcPtr);
 
 // Prints the given table to stdout.
 void print_func_table(FuncTable* ft);

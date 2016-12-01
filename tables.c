@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "tables.h"
+#include "tree.h"
 
 // Literals Table
 // ----------------------------------------------------------------------------
@@ -128,7 +129,7 @@ int get_scope(SymTable* st, int i) {
 }
 
 int get_svar_currVal(SymTable* st, int i){
-  return st->t[i].currVal;
+  return st->t[i].currVal[0];
 }
 
 int get_cvar_currVal(SymTable* st, int i, int j){
@@ -136,7 +137,7 @@ int get_cvar_currVal(SymTable* st, int i, int j){
 }
 
 void set_svar_currVal(SymTable* st, int i, int val){
-  st->t[i].currVal = val;
+  st->t[i].currVal[0] = val;
 }
 
 void set_cvar_currVal(SymTable* st, int i, int j, int val){
@@ -169,6 +170,7 @@ typedef struct {
   char name[FUNC_MAX_SIZE];
   int line;
   int arity;
+  Tree* functionPtr;
 
 } FuncEntry;
 
@@ -192,10 +194,11 @@ int lookup_func(FuncTable* ft, char* s) {
     return -1;
 }
 
-int add_func(FuncTable* ft, char* s, int arity, int line) {
+int add_func(FuncTable* ft, char* s, int arity, int line, Tree* functionPtr) {
     strcpy(ft->t[ft->size].name, s);
-	 ft->t[ft->size].arity = arity;
+	  ft->t[ft->size].arity = arity;
     ft->t[ft->size].line = line;
+    ft->t[ft->size].functionPtr = functionPtr;
     int old_side = ft->size;
     ft->size++;
     return old_side;
@@ -211,6 +214,14 @@ int get_func_arity(FuncTable* ft, int i) {
 
 int get_func_line(FuncTable* ft, int i) {
     return ft->t[i].line;
+}
+
+Tree* get_func_ptr(FuncTable* ft, int i) {
+  return ft->t[i].functionPtr;
+}
+
+void set_func_ptr(FuncTable* ft, int i, Tree* funcPtr) {
+  ft->t[i].functionPtr = funcPtr;
 }
 
 void print_func_table(FuncTable* ft) {
