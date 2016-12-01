@@ -4,16 +4,19 @@
 #include "stack.h"
 #include "tables.h"
 
+extern LitTable* literals;
+extern SymTable* symbols;
+extern FuncTable* functions;
+
 Stack* stack;
-//extern SymTable *vt;
 
 // Forward declaration
 void rec_run_ast(Tree *ast);
 
-/*void store(Tree* node, int val){
-  int pos = get_data(node);
-  set_currVal(vt,pos,val);
-}*/
+void store(Tree* node, int val){
+  int pos = get_tree_data(node);
+  //set_currVal(symbols,pos,val);
+}
 
 void run_stmt_seq(Tree* node){
 
@@ -61,11 +64,9 @@ void run_output(Tree* node){
 
 void run_write(Tree* node){
 
-  //TODO: not sure if this is right
-  //int pos = get_tree_data(get_child(node,0));
+  int pos = get_tree_data(get_child(node,0));
 
-  //TODO: implement get_currVal() of tables.c
-  //printf("%d",get_currVal(vt,pos));
+  //printf("%d",get_currVal(symbols,pos));
 }
 
 void run_read(Tree* node){
@@ -84,7 +85,7 @@ void run_assign(Tree* node){
   rec_run_ast(get_child(node,1));
   stack = stack_pop(stack,&result);
 
-  //store(get_child(node,0),result);
+  store(get_child(node,0),result);
 }
 
 void run_num(Tree* node){
@@ -92,12 +93,24 @@ void run_num(Tree* node){
 }
 
 void run_svar(Tree* node){
-  //int pos = get_data(node);
+  int pos = get_tree_data(node);
 
-  //stack = stack_push(stack,get_currVal(vt,pos));
+  //stack = stack_push(stack,get_currVal(symbols,pos));
 }
 
 void run_cvar(Tree* node){
+
+  int index,pos;
+
+  // Execute child to know which position to access
+  rec_run_ast(get_child(node,0));
+
+  // Get index from stack
+  stack = stack_pop(stack, &index);
+
+  pos = get_tree_data(node);
+
+  //stack = stack_push(stack,get_currVal(symbols,pos));
 
 }
 

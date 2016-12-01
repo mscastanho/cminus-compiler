@@ -60,6 +60,20 @@ int get_line(SymTable* st, int i);
 // No check is made by this function, so make sure that the index is valid first.
 int get_scope(SymTable* st, int i);
 
+// Returns the current value of a the variable stored at the given index.
+// No check is made by this function, so make sure that the index is valid first.
+int get_svar_currVal(SymTable* st, int i);
+
+// Same as the previous but for array variables
+int get_cvar_currVal(SymTable* st, int i, int arrayIndex);
+
+// Sets the current value of a the variable stored at the given index.
+// No check is made by this function, so make sure that the index is valid first.
+void set_svar_currVal(SymTable* st, int i, int val);
+
+// Same as the previous but for array variables
+void set_cvar_currVal(SymTable* st, int i, int j, int val);
+
 // Prints the given table to stdout.
 void print_sym_table(SymTable* st);
 
@@ -108,4 +122,3 @@ void print_func_table(FuncTable* ft);
 void free_func_table(FuncTable* ft);
 
 #endif // TABLES_H
-

@@ -10,7 +10,7 @@
 #define LITERAL_MAX_SIZE 128
 #define LITERALS_TABLE_MAX_SIZE 100
 
-//extern int currentScope; 
+//extern int currentScope;
 
 struct lit_table {
     char t[LITERALS_TABLE_MAX_SIZE][LITERAL_MAX_SIZE];
@@ -60,6 +60,8 @@ typedef struct {
   char name[SYMBOL_MAX_SIZE];
   int line;
   int scope;
+  int *currVal;
+  int length;
 } Entry;
 
 struct sym_table {
@@ -85,10 +87,32 @@ int lookup_var(SymTable* st, char* s, int currentScope) {
 int add_var(SymTable* st, char* s, int line, int scope) {
     strcpy(st->t[st->size].name, s);
     st->t[st->size].line = line;
-	 st->t[st->size].scope = scope;
-    int old_side = st->size;
+	  st->t[st->size].scope = scope;
+    st->t[st->size].currVal = (int*) malloc(sizeof(int));
+    st->t[st->size].currVal[0] = 0;
+    st->t[st->size].length = 0;
+    int old_size = st->size;
     st->size++;
-    return old_side;
+    return old_size;
+}
+
+int add_cvar(SymTable* st, char* s, int line, int scope, int length){
+  strcpy(st->t[st->size].name, s);
+  st->t[st->size].line = line;
+  st->t[st->size].scope = scope;
+  st->t[st->size].currVal = (int*) malloc(length*sizeof(int));
+  st->t[st->size].length = length;
+  int old_size = st->size;
+  st->size++;
+
+  //initialize with zeroes
+  int i;
+  for(i = 0 ; i < length ; i++){
+    st->t[st->size].currVal[i] = 0;
+
+  }
+
+  return old_size;
 }
 
 char* get_name(SymTable* st, int i) {
@@ -101,6 +125,22 @@ int get_line(SymTable* st, int i) {
 
 int get_scope(SymTable* st, int i) {
 	return st->t[i].scope;
+}
+
+int get_svar_currVal(SymTable* st, int i){
+  return st->t[i].currVal;
+}
+
+int get_cvar_currVal(SymTable* st, int i, int j){
+  return st->t[i].currVal[j];
+}
+
+void set_svar_currVal(SymTable* st, int i, int val){
+  st->t[i].currVal = val;
+}
+
+void set_cvar_currVal(SymTable* st, int i, int j, int val){
+  st->t[i].currVal[j] = val;
 }
 
 void print_sym_table(SymTable* st) {

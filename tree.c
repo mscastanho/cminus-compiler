@@ -20,7 +20,7 @@ Tree* new_node(nodeType type, int data) {
     Tree* node = malloc(sizeof * node);
     node->type = type;
     node->count = 0;
-	node->data = data;
+	  node->data = data;
     for (int i = 0; i < CHILDREN_LIMIT; i++) {
         node->child[i] = NULL;
     }
@@ -35,6 +35,10 @@ void set_tree_data(Tree* t, int data){
 	t->data = data;
 }
 
+nodeType get_tree_type(Tree* t){
+  return t->type;
+}
+
 void set_tree_type(Tree *t, nodeType type){
 	t->type = type;
 }
@@ -43,6 +47,9 @@ int get_children_number(Tree *t){
 	return t->count;
 }
 
+Tree* get_child(Tree *parent, int idx) {
+    return parent->child[idx];
+}
 
 void add_child(Tree *parent, Tree *child) {
     if (parent->count == CHILDREN_LIMIT) {

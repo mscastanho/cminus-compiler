@@ -18,6 +18,7 @@
 #include "tree.h"
 #include "list.h"
 #include "tables.h"
+#include "interpreter.h"
 
 #define VAR_RDCL_ERROR_MSG "SEMANTIC ERROR (%d): variable '%s' already declared at line %d.\n"
 #define VAR_NDCL_ERROR_MSG "SEMANTIC ERROR (%d): variable '%s' was not declared.\n"
@@ -352,13 +353,18 @@ int main() {
 	functions = create_func_table();
 
 	if (yyparse() == 0){
+
+		//for debugging purposes
 		//print_dot(ast);
-		printf("PARSE SUCESSFUL!\n\n");
+		//printf("PARSE SUCESSFUL!\n\n");
 		//print_lit_table(literals);
 		//printf("\n\n");
 		//print_sym_table(symbols);
 		//printf("\n\n");
 		//print_func_table(functions);
+
+		stdin = fopen(ctermid(NULL), "r");
+    run_ast(ast);
 	}
 
 

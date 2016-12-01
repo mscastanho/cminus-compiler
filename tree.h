@@ -47,9 +47,13 @@ int get_tree_data(Tree* t);
 
 void set_tree_data(Tree* t, int data);
 
+nodeType get_tree_type(Tree* t);
+
 void set_tree_type(Tree *t, nodeType type);
 
 int get_children_number(Tree *t);
+
+Tree* get_child(Tree* t, int i);
 
 void add_child(Tree *parent, Tree *child);
 
