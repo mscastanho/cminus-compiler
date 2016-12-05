@@ -126,8 +126,29 @@ void run_output(Tree* node){
 void run_write(Tree* node){
 
   int ltPos = get_tree_data(get_child(node,0));
-  //TODO: Use strtok to split string by \n
-  printf("%s",get_literal(literals,ltPos));
+  char p,c;
+  char string[128];
+  strcpy(string,get_literal(literals,ltPos));
+
+  int len = strlen(string);
+
+  for(int i = 0 ; i < len ; i++){
+      c = string[i];
+
+      if(c != '\\')
+        p = c;
+      else if(i < len - 1){
+          if(string[i+1] == 'n')
+            p = '\n';
+
+          if(string[i+1] == 't')
+            p = '\t';
+
+        i++;
+      }
+
+      printf("%c",p);
+    }
 }
 
 void run_read(Tree* node){
