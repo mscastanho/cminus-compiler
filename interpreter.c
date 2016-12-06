@@ -1,22 +1,57 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include "interpreter.h"
 #include "tree.h"
 #include "stack.h"
 #include "tables.h"
 #include "string.h"
 
+#define MAX_NUMBER_FRAMES 1024
 extern LitTable* literals;
 extern SymTable* symbols;
 extern FuncTable* functions;
+struct frame; // forward reference
 
 Stack* stack;
+Frame* frames[MAX_NUMBER_FRAMES];
+int frames_idx = -1;
+
+
+// Pair to store position in var table and current val
+typedef struct pair{
+  int pos;
+  int val;
+} VarPair;
+
+struct frame {
+  Tree* func_ptr;
+  int func_idx;
+  int nArgs;
+  VarPair* args;
+  int nVars;
+  VarPair* vars;
+};
+
+void store_frame(Frame* f){
+  frames_idx = (++frames_idx) % MAX_NUMBER_FRAMES;
+
+  frames[frames_idx] = f;
+}
+
+void delete_last_frame(){
+  frames_idx--;
+}
+
+Frame* get_last_frame(){
+  return frames[frames_idx];
+}
 
 // Forward declaration
 void rec_run_ast(Tree *ast);
 
 //index is to be used in case of cvar
 //should be 0 otherwise
-void store(Tree* node, int val){
+/*void store(Tree* node, int val){
   int pos = get_tree_data(node);
 
   if(get_tree_type(node) == CVAR){
@@ -29,16 +64,56 @@ void store(Tree* node, int val){
     set_cvar_currVal(symbols,pos,index,val);
   }else
     set_svar_currVal(symbols,pos,val);
+}*/
+
+void store(Tree* node, int val){
+
+  int pos = get_tree_data(node);
+  Frame* f = get_last_frame();
+
+  //Check if it is one of the arguments
+  for(int i = 0 ; i < f->nArgs ; i++){
+    if(pos == f->args[i].pos){
+      f->args[i].val = val;
+      return;
+    }
+  }
+
+  //Check if it is one of the variables
+  for(int i = 0 ; i < f->nVars ; i++){
+    if(pos == f->vars[i].pos){
+      f->vars[i].val = val;
+      return;
+    }
+  }
+
+  printf("Could not store value.\n");
+  exit(1);
 }
 
-void run_stmt_seq(Tree* node){
+int load(int pos){
+  Frame* f = get_last_frame();
 
+  //Check if it is one of the arguments
+  for(int i = 0 ; i < f->nArgs ; i++){
+    if(pos == f->args[i].pos)
+      return f->args[i].val;
+  }
+
+  //Check if it is one of the variables
+  for(int i = 0 ; i < f->nVars ; i++){
+    if(pos == f->vars[i].pos)
+      return f->vars[i].val ;
+  }
+
+  printf("Could not load value.\n");
+  exit(1);
 }
 
 void run_func_list(Tree* node){
 
   int cnt = get_children_number(node);
-  Tree* main_node;
+  Tree* main_node = NULL;
 
   for(int i = 0 ; i < cnt ; i++){
 
@@ -47,23 +122,34 @@ void run_func_list(Tree* node){
     // Get index at functions table
     int ftPos = get_tree_data(func_decl_node);
 
-    // Set function pointer
-    set_func_ptr(functions,ftPos,func_decl_node);
-
     // Save pointer to main
     if(ftPos != -1){
       char* func_name = get_func_name(functions,ftPos);
 
       if(!strcmp("main",func_name))
-        main_node = get_func_ptr(functions,ftPos);
+        main_node = func_decl_node;
     }else
       printf("ERROR AT INTERPRETER.C:RUN_FUNC_LIST()\n");
   }
-
-  rec_run_ast(main_node);
+    if(main_node != NULL)
+      rec_run_ast(main_node);
+    else
+      printf("Could not find main function.\n");
 }
 
 void run_func_decl(Tree* node){
+
+  // Create function frame
+  Frame* f = (Frame*) malloc (sizeof(Frame));
+  f->func_ptr = node;
+  f->func_idx = get_tree_data(node);
+  f->nArgs = get_func_arity(functions,f->func_idx);
+  f->args = (VarPair*) malloc (f->nArgs*sizeof(VarPair));
+  //f->vars will be set later
+  //f->nVars will be set later
+
+  store_frame(f);
+
   //Execute function header
   rec_run_ast(get_child(node,0));
 
@@ -79,6 +165,21 @@ void run_func_header(Tree* node){
 
 void run_param_list(Tree* node){
 
+  Frame* f = get_last_frame();
+  int arity = get_func_arity(functions,f->func_idx);
+
+  // Save arg positions
+  for(int i = 0 ; i < get_children_number(node) ; i++){
+    f->args[i].pos = get_tree_data(get_child(node,i));
+  }
+
+  // Get arg values from stack and save in local memory
+  for(int i = arity - 1 ; i >= 0 ; i-- ){
+    int arg;
+    stack = stack_pop(stack,&arg);
+    f->args[i].val = arg;
+  }
+
 }
 
 void run_func_body(Tree* node){
@@ -92,6 +193,17 @@ void run_func_body(Tree* node){
 
 void run_var_list(Tree* node){
 
+  //Get current function frame
+  Frame *f = get_last_frame();
+
+  f->nVars = get_children_number(node);
+  f->vars = (VarPair*) malloc (f->nVars*sizeof(VarPair));
+
+  // Initialize vars with pos and current value
+  for(int i = 0 ; i < get_children_number(node) ; i++){
+    f->vars[i].pos = get_tree_data(get_child(node,i));
+    f->vars[i].val = 0;
+  }
 }
 
 void run_block(Tree* node){
@@ -176,12 +288,12 @@ void run_num(Tree* node){
 void run_svar(Tree* node){
   int pos = get_tree_data(node);
 
-  stack = stack_push(stack,get_svar_currVal(symbols,pos));
+  stack = stack_push(stack,load(pos));
 }
 
 void run_cvar(Tree* node){
 
-  int index,pos;
+  int index;
 
   // Execute child to know which position to access
   rec_run_ast(get_child(node,0));
@@ -191,7 +303,7 @@ void run_cvar(Tree* node){
 
   pos = get_tree_data(node);
 
-  stack = stack_push(stack,get_cvar_currVal(symbols,pos,index));
+  stack = stack_push(stack,load(index));
 
 }
 
@@ -285,10 +397,10 @@ void run_while(Tree* node){
 
   do{
     // run statements
-    rec_run_ast(get_child(node, 0));
+    rec_run_ast(get_child(node, 1));
 
     // eval bool-exp
-    rec_run_ast(get_child(node,1));
+    rec_run_ast(get_child(node,0));
     stack = stack_pop(stack,&result);
   }while(result == 1);
 
@@ -296,13 +408,33 @@ void run_while(Tree* node){
 
 void run_user_func(Tree* node){
 
+  int func_idx = get_tree_data(node);
+
+  // Run arguments list
+  rec_run_ast(get_child(node,0));
+
+  // Execute function
+  rec_run_ast(get_func_ptr(functions,func_idx));
+
+  // Remove frame after execution
+  delete_last_frame();
 }
 
 void run_arg_list(Tree* node){
+  int cnt = get_children_number(node);
 
+  // Evaluate and push arguments to stack
+  for(int i = 0 ; i < cnt ; i++ ){
+    rec_run_ast(get_child(node,i));
+  }
 }
 
 void rec_run_ast(Tree *ast) {
+
+    char string[16];
+    type2str(get_tree_type(ast),0,string);
+
+    //printf("%s\n",string);
 
     switch(get_tree_type(ast)){
         case FUNC_LIST:

@@ -194,11 +194,11 @@ int lookup_func(FuncTable* ft, char* s) {
     return -1;
 }
 
-int add_func(FuncTable* ft, char* s, int arity, int line, Tree* functionPtr) {
+int add_func(FuncTable* ft, char* s, int arity, int line) {
     strcpy(ft->t[ft->size].name, s);
 	  ft->t[ft->size].arity = arity;
     ft->t[ft->size].line = line;
-    ft->t[ft->size].functionPtr = functionPtr;
+    ft->t[ft->size].functionPtr = NULL;
     int old_side = ft->size;
     ft->size++;
     return old_side;

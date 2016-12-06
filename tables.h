@@ -102,7 +102,7 @@ FuncTable* create_func_table();
 // Adds a fresh function to the table.
 // No check is made by this function, so make sure to call 'lookup_func' first.
 // Returns the index where the function was inserted.
-int add_func(FuncTable* ft, char* s, int arity, int line, Tree* functionPtr);
+int add_func(FuncTable* ft, char* s, int arity, int line);
 
 // Returns the index where the given function is stored or -1 otherwise.
 int lookup_func(FuncTable* ft, char* s);

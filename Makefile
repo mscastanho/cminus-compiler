@@ -26,4 +26,4 @@ gcc: scanner.c parser.c
 	gcc -Wall -o trab4 scanner.c parser.c interpreter.o tables.o tree.o list.o stack.o -ly
 
 clean:
-	@rm -f *.o *.output *~ scanner.c parser.h parser.c trab3
+	@rm -f *.o *.output *~ scanner.c parser.h parser.c trab4

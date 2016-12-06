@@ -3,6 +3,7 @@
 
 #include "tree.h"
 
+typedef struct frame Frame;
 void run_ast(Tree *ast);
 
 #endif

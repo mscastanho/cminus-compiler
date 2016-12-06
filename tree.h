@@ -59,6 +59,8 @@ void add_child(Tree *parent, Tree *child);
 
 Tree* new_subtree(nodeType type, int data, int child_count, ...);
 
+void type2str(nodeType type, int data, char* str);
+
 void print_tree(Tree *tree);
 void print_dot(Tree *tree);
 void print_node(Tree *node, int level);
