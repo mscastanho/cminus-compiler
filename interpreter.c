@@ -36,6 +36,8 @@ void store_frame(Frame* f){
   frames_idx = (++frames_idx) % MAX_NUMBER_FRAMES;
 
   frames[frames_idx] = f;
+
+  printf("New frame! -> frames_idx = %d\n",frames_idx);
 }
 
 void delete_last_frame(){
@@ -444,12 +446,8 @@ void run_arg_list(Tree* node){
 
 void run_return(Tree* node){
 
-  // Stack return value
-  int pos = get_tree_data(get_child(node,0));
-
-  int val = load(pos);
-
-  stack = stack_push(stack,val);
+  // Stack return value by recursively running argument
+  rec_run_ast(get_child(node,0));
 }
 
 void rec_run_ast(Tree *ast) {
