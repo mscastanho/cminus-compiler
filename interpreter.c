@@ -33,7 +33,8 @@ struct frame {
 };
 
 void store_frame(Frame* f){
-  frames_idx = (++frames_idx) % MAX_NUMBER_FRAMES;
+  frames_idx++;
+  frames_idx = frames_idx % MAX_NUMBER_FRAMES;
 
   frames[frames_idx] = f;
 
@@ -535,6 +536,7 @@ void rec_run_ast(Tree *ast) {
 }
 
 void run_ast(Tree *ast) {
+
     rec_run_ast(ast);
     //free(stack);
 }
