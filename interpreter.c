@@ -16,11 +16,15 @@ Stack* stack;
 Frame* frames[MAX_NUMBER_FRAMES];
 int frames_idx = -1;
 
+// S = Simple ; C = Array
+typedef enum vt {S,C} varType;
 
 // Pair to store position in var table and current val
 typedef struct pair{
   int pos;
+  int size;
   int val;
+  varType type;
 } VarPair;
 
 struct frame {
@@ -70,13 +74,30 @@ void rec_run_ast(Tree *ast);
 
 void store(Tree* node, int val){
 
+
   int pos = get_tree_data(node);
   Frame* f = get_last_frame();
+
+  /*if(get_tree_type(node) == CVAR){
+    //Get index from stack
+    rec_run_ast(get_child(node,0));
+    stack = stack_pop(stack,&index);
+  }*/
 
   //Check if it is one of the arguments
   for(int i = 0 ; i < f->nArgs ; i++){
     if(pos == f->args[i].pos){
-      f->args[i].val = val;
+
+      if(f->args[i].type == S)
+        f->args[i].val[index] = val;
+      else{ //array
+        int index;
+        rec_run_ast(get_child(node,0));
+        stack = stack_pop(stack,&index);
+
+        // In this case args[i].val has a pointer to the array
+        *(f->args[i].val)[index] = val;
+      }
       //printf(" Storing: %s = %d \n",get_name(symbols,pos),val);
       return;
     }
@@ -85,7 +106,17 @@ void store(Tree* node, int val){
   //Check if it is one of the variables
   for(int i = 0 ; i < f->nVars ; i++){
     if(pos == f->vars[i].pos){
-      f->vars[i].val = val;
+
+      if(f->vars[i].type == S)
+        f->vars[i].val[index] = val;
+      else{ //array
+        int index;
+        rec_run_ast(get_child(node,0));
+        stack = stack_pop(stack,&index);
+
+        // In this case args[i].val has a pointer to the array
+        *(f->vars[i].val)[index] = val;
+      }
       //printf(" Storing: %s = %d \n",get_name(symbols,pos),val);
       return;
     }
@@ -95,19 +126,39 @@ void store(Tree* node, int val){
   exit(1);
 }
 
-int load(int pos){
+int load(Tree* node){
+  int pos = get_tree_data(node);
   Frame* f = get_last_frame();
 
   //Check if it is one of the arguments
   for(int i = 0 ; i < f->nArgs ; i++){
-    if(pos == f->args[i].pos)
-      return f->args[i].val;
+    if(pos == f->args[i].pos){
+      if(f->args[i].type == S){
+          return f->args[i].val;
+      }else{
+        // array
+        int index;
+        rec_run_ast(get_child(node,0));
+        stack = stack_pop(stack,&index);
+
+        return *(f->args[i].val)[index];
+
+      }
+    }
   }
 
   //Check if it is one of the variables
   for(int i = 0 ; i < f->nVars ; i++){
-    if(pos == f->vars[i].pos)
-      return f->vars[i].val ;
+    if(pos == f->vars[i].pos){
+      if(f->vars[i].type == S){
+          return f->vars[i].val;
+      }else{
+        // array
+        int index;
+        rec_run_ast(get_child(node,0));
+        stack = stack_pop(stack,&index);
+
+        return *(f->vars[i].val)[index];
   }
 
   printf("Could not load value.\n");
@@ -176,11 +227,16 @@ void run_param_list(Tree* node){
   //printf("With parameters: ");
 
   for(int i = get_children_number(node) - 1 ; i >= 0  ; i--){
+    int index;
+
+    Tree* child = get_child(node,i);
 
     // Save arg positions
-    f->args[i].pos = get_tree_data(get_child(node,i));
+    f->args[i].pos = get_tree_data(child);
 
     // Get arg values from stack and save in local memory
+    // If the argument is an array, a point to it's structure
+    // will be passed in the stack
     int arg;
     stack = stack_pop(stack,&arg);
     f->args[i].val = arg;
@@ -210,12 +266,30 @@ void run_var_list(Tree* node){
   f->nVars = get_children_number(node);
   f->vars = (VarPair*) malloc (f->nVars*sizeof(VarPair));
 
+
   //printf("Initializing the following variables:\n");
   // Initialize vars with pos and current value
   for(int i = 0 ; i < get_children_number(node) ; i++){
+    int size = 1;
 
-    f->vars[i].pos = get_tree_data(get_child(node,i));
-    f->vars[i].val = 0;
+    Tree* child = get_child(node,i);
+
+    f->vars[i].pos = get_tree_data(child);
+
+    if(get_tree_type(child) == CVAR){
+      // Get array size
+      rec_run_ast(get_child(child,0));
+      stack = stack_pop(stack,&size);
+
+      // Allocate structure for array
+      int* p = (int*) malloc (size*sizeof(int));
+      f->vars[i].val = (int) p;
+      f->vars[i].type = C;
+    }else{
+      f->vars[i].val = 0;
+      f->vars[i].type = S;
+    }
+
 
     //printf(" %s = %d ",get_name(symbols,f->vars[i].pos),f->vars[i].val);
   }
@@ -303,22 +377,13 @@ void run_num(Tree* node){
 }
 
 void run_svar(Tree* node){
-  int pos = get_tree_data(node);
-
-  stack = stack_push(stack,load(pos));
+  
+  stack = stack_push(stack,load(node));
 }
 
 void run_cvar(Tree* node){
 
-  int index;
-
-  // Execute child to know which position to access
-  rec_run_ast(get_child(node,0));
-
-  // Get index from stack
-  stack = stack_pop(stack, &index);
-
-  stack = stack_push(stack,load(index));
+  stack = stack_push(stack,load(node));
 
 }
 
