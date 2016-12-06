@@ -3,6 +3,11 @@
 
 #include "tree.h"
 
+typedef union valPtr {
+  int val;
+  int* ptr;
+}ValPtr;
+
 typedef struct frame Frame;
 void run_ast(Tree *ast);
 

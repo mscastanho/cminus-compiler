@@ -3,11 +3,11 @@
 #include "stack.h"
 
 struct stackNode {
-	int value;
+	ValPtr value;
 	Stack* next;
 };
 
-Stack* stack_new(int i){
+Stack* stack_new(ValPtr i){
 	Stack* s = (Stack*) malloc(sizeof(Stack));
 	s->value = i;
 	s->next = NULL;
@@ -16,7 +16,7 @@ Stack* stack_new(int i){
 }
 
 // This adds an element to the end of the list
-Stack* stack_push(Stack* s, int i){
+Stack* stack_push(Stack* s, ValPtr i){
 
 	if(s == NULL)
 		return stack_new(i);
@@ -27,7 +27,7 @@ Stack* stack_push(Stack* s, int i){
 	return n;
 }
 
-Stack* stack_pop(Stack* s, int *r){
+Stack* stack_pop(Stack* s, ValPtr *r){
 
 	if(s == NULL)
 		return s;

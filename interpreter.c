@@ -23,7 +23,9 @@ typedef enum vt {S,C} varType;
 typedef struct pair{
   int pos;
   int size;
-  int val;
+  //int val; //val in case of svar
+  //int* ptr; //ptr to structure in case of cvar
+  ValPtr value; //Hold either an int or a pointer to an int (CVAR)
   varType type;
 } VarPair;
 
@@ -89,14 +91,14 @@ void store(Tree* node, int val){
     if(pos == f->args[i].pos){
 
       if(f->args[i].type == S)
-        f->args[i].val[index] = val;
+        f->args[i].value.val = val;
       else{ //array
-        int index;
+        ValPtr index;
         rec_run_ast(get_child(node,0));
         stack = stack_pop(stack,&index);
 
-        // In this case args[i].val has a pointer to the array
-        *(f->args[i].val)[index] = val;
+        // In this case args[i].value has a pointer to the array
+        f->args[i].value.ptr[index.val] = val;
       }
       //printf(" Storing: %s = %d \n",get_name(symbols,pos),val);
       return;
@@ -108,14 +110,14 @@ void store(Tree* node, int val){
     if(pos == f->vars[i].pos){
 
       if(f->vars[i].type == S)
-        f->vars[i].val[index] = val;
+        f->vars[i].value.val = val;
       else{ //array
-        int index;
+        ValPtr index;
         rec_run_ast(get_child(node,0));
         stack = stack_pop(stack,&index);
 
-        // In this case args[i].val has a pointer to the array
-        *(f->vars[i].val)[index] = val;
+        // In this case args[i].value has a pointer to the array
+        f->vars[i].value.ptr[index.val] = val;
       }
       //printf(" Storing: %s = %d \n",get_name(symbols,pos),val);
       return;
@@ -134,14 +136,14 @@ int load(Tree* node){
   for(int i = 0 ; i < f->nArgs ; i++){
     if(pos == f->args[i].pos){
       if(f->args[i].type == S){
-          return f->args[i].val;
+          return f->args[i].value.val;
       }else{
         // array
-        int index;
+        ValPtr index;
         rec_run_ast(get_child(node,0));
         stack = stack_pop(stack,&index);
 
-        return *(f->args[i].val)[index];
+        return f->args[i].value.ptr[index];
 
       }
     }
@@ -151,14 +153,14 @@ int load(Tree* node){
   for(int i = 0 ; i < f->nVars ; i++){
     if(pos == f->vars[i].pos){
       if(f->vars[i].type == S){
-          return f->vars[i].val;
+          return f->vars[i].value.val;
       }else{
         // array
         int index;
         rec_run_ast(get_child(node,0));
         stack = stack_pop(stack,&index);
 
-        return *(f->vars[i].val)[index];
+        return f->vars[i].value.ptr[index];
   }
 
   printf("Could not load value.\n");
@@ -239,7 +241,7 @@ void run_param_list(Tree* node){
     // will be passed in the stack
     int arg;
     stack = stack_pop(stack,&arg);
-    f->args[i].val = arg;
+    f->args[i].value.val = arg;
 
     //printf(" %s = %d ",get_name(symbols,f->args[i].pos),arg);
 
@@ -283,11 +285,13 @@ void run_var_list(Tree* node){
 
       // Allocate structure for array
       int* p = (int*) malloc (size*sizeof(int));
-      f->vars[i].val = (int) p;
+      f->vars[i].ptr = (int) p;
       f->vars[i].type = C;
+      f->vars[i].val = -1; // trash. not used in case of cvar
     }else{
       f->vars[i].val = 0;
       f->vars[i].type = S;
+      f->vars[i].ptr = NULL; // trash. not used in case of svar
     }
 
 
@@ -377,7 +381,7 @@ void run_num(Tree* node){
 }
 
 void run_svar(Tree* node){
-  
+
   stack = stack_push(stack,load(node));
 }
 
