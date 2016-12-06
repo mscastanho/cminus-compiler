@@ -75,6 +75,7 @@ void store(Tree* node, int val){
   for(int i = 0 ; i < f->nArgs ; i++){
     if(pos == f->args[i].pos){
       f->args[i].val = val;
+      //printf(" Storing: %s = %d \n",get_name(symbols,pos),val);
       return;
     }
   }
@@ -83,6 +84,7 @@ void store(Tree* node, int val){
   for(int i = 0 ; i < f->nVars ; i++){
     if(pos == f->vars[i].pos){
       f->vars[i].val = val;
+      //printf(" Storing: %s = %d \n",get_name(symbols,pos),val);
       return;
     }
   }
@@ -139,6 +141,8 @@ void run_func_list(Tree* node){
 
 void run_func_decl(Tree* node){
 
+  //printf("Running function: %s\n",get_func_name(functions,get_tree_data(node)));
+
   // Create function frame
   Frame* f = (Frame*) malloc (sizeof(Frame));
   f->func_ptr = node;
@@ -166,19 +170,24 @@ void run_func_header(Tree* node){
 void run_param_list(Tree* node){
 
   Frame* f = get_last_frame();
-  int arity = get_func_arity(functions,f->func_idx);
 
-  // Save arg positions
-  for(int i = 0 ; i < get_children_number(node) ; i++){
+  //printf("With parameters: ");
+
+  for(int i = get_children_number(node) - 1 ; i >= 0  ; i--){
+
+    // Save arg positions
     f->args[i].pos = get_tree_data(get_child(node,i));
-  }
 
-  // Get arg values from stack and save in local memory
-  for(int i = arity - 1 ; i >= 0 ; i-- ){
+    // Get arg values from stack and save in local memory
     int arg;
     stack = stack_pop(stack,&arg);
     f->args[i].val = arg;
+
+    //printf(" %s = %d ",get_name(symbols,f->args[i].pos),arg);
+
   }
+
+  //printf("\n");
 
 }
 
@@ -199,11 +208,17 @@ void run_var_list(Tree* node){
   f->nVars = get_children_number(node);
   f->vars = (VarPair*) malloc (f->nVars*sizeof(VarPair));
 
+  //printf("Initializing the following variables:\n");
   // Initialize vars with pos and current value
   for(int i = 0 ; i < get_children_number(node) ; i++){
+
     f->vars[i].pos = get_tree_data(get_child(node,i));
     f->vars[i].val = 0;
+
+    //printf(" %s = %d ",get_name(symbols,f->vars[i].pos),f->vars[i].val);
   }
+
+//  printf("\n\n");
 }
 
 void run_block(Tree* node){
@@ -300,8 +315,6 @@ void run_cvar(Tree* node){
 
   // Get index from stack
   stack = stack_pop(stack, &index);
-
-  pos = get_tree_data(node);
 
   stack = stack_push(stack,load(index));
 
@@ -429,12 +442,22 @@ void run_arg_list(Tree* node){
   }
 }
 
+void run_return(Tree* node){
+
+  // Stack return value
+  int pos = get_tree_data(get_child(node,0));
+
+  int val = load(pos);
+
+  stack = stack_push(stack,val);
+}
+
 void rec_run_ast(Tree *ast) {
 
     char string[16];
     type2str(get_tree_type(ast),0,string);
 
-    //printf("%s\n",string);
+    //printf("-------> Running node: %s\n",string);
 
     switch(get_tree_type(ast)){
         case FUNC_LIST:
@@ -504,6 +527,9 @@ void rec_run_ast(Tree *ast) {
           break;
         case ARG_LIST:
           run_arg_list(ast);
+          break;
+        case _RETURN:
+          run_return(ast);
           break;
         default:
           break;
