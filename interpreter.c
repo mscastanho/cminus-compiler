@@ -37,7 +37,7 @@ void store_frame(Frame* f){
 
   frames[frames_idx] = f;
 
-  printf("New frame! -> frames_idx = %d\n",frames_idx);
+  //printf("New frame! -> frames_idx = %d\n",frames_idx);
 }
 
 void delete_last_frame(){

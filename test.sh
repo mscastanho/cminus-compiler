@@ -6,6 +6,6 @@ do
 	myoutput="$filename.myout"
 	output="$filename.out"
 	printf "Diff de $filename:\n"
-	./trab4 < ./test/in/$i | diff ./test/out/$output -
+	./trab4 < ./test/in/$i | diff ./test/out/$output - --suppress-blank-empty
 	printf "\n\n"
 done
